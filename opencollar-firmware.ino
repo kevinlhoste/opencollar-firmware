@@ -1,0 +1,358 @@
+
+
+/* ============================================
+I2Cdev device library code is placed under the MIT license
+Copyright (c) 2011 Jeff Rowberg
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+===============================================
+*/
+/*
+gyro : 250Â°s
+*/
+/*
+V0004 add serial
+V0005 add gyro
+*/
+
+
+// Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
+// is used in I2Cdev.h
+#include "Wire.h"
+#include <SPI.h>
+#include "DataFlash.h"
+#include <EEPROM.h>
+
+// I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
+// for both classes must be in the include path of your project
+#include "I2Cdev.h"
+#include "MPU6050.h"
+
+// class default I2C address is 0x68
+// specific I2C addresses may be passed as a parameter here
+// AD0 low = 0x68 (default for InvenSense evaluation board)
+// AD0 high = 0x69
+MPU6050 accelgyro;
+
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
+
+#define LED_PIN 13
+bool blinkState = false;
+char receivedChar=0;
+int mode_op;
+//flash
+//general page sur 16 bits
+uint16_t page   = 0;
+DataFlash dataflash;
+int buffercount=0;
+uint8_t buffer = 0;
+int currentPage=0;
+int currentBlock1=0;
+int currentBlock2=0;
+int16_t myData[6];
+
+void setup() {
+    // join I2C bus (I2Cdev library doesn't do this automatically)
+    Wire.begin();
+    SPI.begin();
+    dataflash.setup(5,6,7);
+    delay(10);
+    dataflash.autoErase();
+    // initialize serial communication
+    // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
+    // it's really up to you depending on your project)
+    Serial.begin(38400);
+
+    // initialize device
+    //  Serial.println("Initializing I2C devices...");
+    accelgyro.initialize();
+    // verify connection
+    //  Serial.println("Testing device connections...");
+    //   Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    // configure Arduino LED for
+    pinMode(LED_PIN, OUTPUT);
+    establishContact();
+}
+
+void loop() {
+    checkSerial();  
+    if(mode_op==1) {
+      // read raw accel/gyro measurements from device
+      accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+      // these methods (and a few others) are also available
+      //accelgyro.getAcceleration(&ax, &ay, &az);
+      //accelgyro.getRotation(&gx, &gy, &gz);
+      // display tab-separated accel/gyro x/y/z values
+      //Serial.print("a/g:\t");
+      Serial.println(ax); //Serial.print("\t");
+      Serial.println(ay); //Serial.print("\t");
+      Serial.println(az); //Serial.print("\t");
+      Serial.println(gx); //Serial.print("\t");
+      Serial.println(gy); //Serial.print("\t");
+      Serial.println(gz);
+      /*
+      // blink LED to indicate activity
+      blinkState = !blinkState;
+      digitalWrite(LED_PIN, blinkState);*/
+    }
+    //save
+     else if(mode_op==2) {
+      uint8_t MSB;
+      uint8_t LSB;
+      // read raw accel/gyro measurements from device
+      accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+      //dataflash.bufferWrite(buffer, 0);
+      //put data in buffer
+  //    Serial.println(ax);
+      MSB=ax & 0xff;
+      LSB=(ax >> 8);
+      SPI.transfer(MSB);
+      SPI.transfer(LSB);
+  //    Serial.println(ay);
+      MSB=ay & 0xff;
+      LSB=(ay >> 8);
+  //    Serial.println(az);
+      SPI.transfer(MSB);
+      SPI.transfer(LSB);
+      MSB=az & 0xff;
+      LSB=(az >> 8);
+      SPI.transfer(MSB);
+      SPI.transfer(LSB);
+   //   Serial.println(gx);
+      MSB=gx & 0xff;
+      LSB=(gx >> 8);
+   //   Serial.println(gy);
+      SPI.transfer(MSB);
+      SPI.transfer(LSB);
+      MSB=gy & 0xff;
+      LSB=(gy >> 8);
+ //     Serial.println(gz);
+      SPI.transfer(MSB);
+      SPI.transfer(LSB);
+      MSB=gz & 0xff;
+      LSB=(gz >> 8);
+      SPI.transfer(MSB);
+      SPI.transfer(LSB);
+      buffercount+=12;
+     //if the buffer is full transfer buffer to page
+     if(buffercount == 528) {
+    //  Serial.println("transfer page");
+      dataflash.bufferToPage(0, page);
+    //  Serial.println(page);
+      page ++;
+      buffercount=0;
+      buffer=0;
+      dataflash.bufferWrite(buffer, 0);
+      if(currentPage==8 && currentBlock1<=254){
+        currentPage=0;
+        currentBlock1++;
+        EEPROM.write(0,currentBlock1);
+        EEPROM.write(2, currentPage);
+      /*  Serial.print("Block");
+        Serial.print(currentBlock1);
+        Serial.print("\n");*/
+        } 
+      else if(currentPage<8 && currentBlock1<=255){
+        currentPage++;
+        EEPROM.write(0,currentBlock1);
+        EEPROM.write(2, currentPage);
+        }
+      else if(currentPage<8 && currentBlock1==255 && currentBlock2<=255){
+        currentPage++;
+        EEPROM.write(0,currentBlock1);
+        EEPROM.write(2, currentPage);
+        }  
+      else if(currentPage=8 && currentBlock1==255 && currentBlock2<=255){
+        currentPage=0;
+        currentBlock2++;
+       /* EEPROM.write(1,currentBlock2);
+        EEPROM.write(2, currentPage);
+        Serial.print("Block2");
+        Serial.print(currentBlock2);
+        Serial.print("\n");*/
+        }   
+    }
+     }
+   else if(mode_op==3) {/*
+      uint8_t MSB;
+      uint8_t LSB;
+      uint16_t value;
+      uint16_t k=0;
+      for(k=0;k<=page;k++)
+        {
+        dataflash.pageRead(k, 0); 
+        for(int j=0;j<528;j++) { 
+          MSB = SPI.transfer(0xff);
+          // Serial.println(toto0);
+          LSB = SPI.transfer(0xff);
+          //Serial.println(toto1);
+          value=LSB;
+          value <<= 8;
+          value |=MSB;
+          Serial.println(value);
+          }
+        }*/
+     }
+}
+void test_write()
+  {
+    
+  myData[0]=4388;
+  myData[1]=-16498;
+  myData[2]=-125;
+  myData[3]=122;
+  myData[4]=-298;
+  myData[5]=-3256;
+  myData[6]=4389;
+  myData[7]=-16499;
+  myData[8]=-126;
+  myData[9]=123;
+  myData[10]=-299;
+  myData[11]=-3257;
+  uint8_t MSB;
+  uint8_t LSB;
+  dataflash.bufferWrite(buffer, 0);
+  for(int i=0;i<=11;i++)
+    {
+    MSB=myData[i] & 0xff;
+    LSB=(myData[i] >> 8);
+    SPI.transfer(MSB);
+    SPI.transfer(LSB);
+    buffercount+=2;
+    }
+  dataflash.bufferToPage(0, 0);
+  }
+
+void test_write2()
+  {
+  accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz); 
+  Serial.println(ax);
+  myData[0]=ax;
+  Serial.println(ay);
+  myData[1]=ay;
+  Serial.println(az);
+  myData[2]=az;
+  Serial.println(gx);
+  myData[3]=gx;
+  Serial.println(gy);
+  myData[4]=gy;
+  Serial.println(gz);
+  myData[5]=gz;
+  uint8_t MSB;
+  uint8_t LSB;
+  buffercount=0;
+  dataflash.bufferWrite(buffer, 0);
+ for(int j=0;j<=43;j++){
+  for(int i=0;i<=5;i++)
+    {
+    MSB=myData[i] & 0xff;
+    LSB=(myData[i] >> 8);
+    SPI.transfer(MSB);
+    SPI.transfer(LSB);
+    buffercount+=2;
+    Serial.println(buffercount);
+    }
+ } 
+  if(buffercount == 528) {
+      Serial.println("transfer page");
+      dataflash.bufferToPage(0, page);
+      Serial.println(page);
+      page ++;
+  }
+  }  
+  
+void checkSerial(){
+if (Serial.available() > 0) {
+    // get incoming byte:
+    receivedChar = Serial.read();
+    //Live mode
+    if(receivedChar=='l'){
+      //Serial.println("Live mode");
+      mode_op=1;
+    }
+    else if(receivedChar=='w'){
+      Serial.println("Write mode");
+      //test_write2();
+      EEPROM.write(511, 1);
+      buffer=0;
+      dataflash.bufferWrite(buffer, 0);
+      mode_op=2;
+    }
+    //read
+    else if(receivedChar=='r'){
+      //Serial.println("Read");
+      currentPage = EEPROM.read(2);
+      currentBlock1=EEPROM.read(0);
+     /* Serial.print("Block:");
+      Serial.print(currentBlock1);
+      Serial.print("\n");
+      Serial.print("Page:");
+      Serial.print(currentPage);
+      Serial.print("\n");*/
+      if(currentBlock1==0) page=currentPage;
+      else page=(currentBlock1*8)+currentPage;
+     /* Serial.print("Page total:");
+      Serial.print(page);
+      Serial.print("\n");*/
+      //mode_op=3;
+      uint8_t MSB;
+      uint8_t LSB;
+      int16_t value;
+      uint16_t k=0;
+      buffer=0;
+      for(k=0;k<page;k++){
+      dataflash.pageRead(k, 0); 
+     /* Serial.print("*************************");
+      Serial.println(k);*/
+        for(int j=0;j<=263;j++) { 
+          MSB = SPI.transfer(0xff);
+          // Serial.println(toto0);
+          LSB = SPI.transfer(0xff);
+          //Serial.println(toto1);
+          value=LSB;
+          value <<= 8;
+          value |=MSB;
+          Serial.println(value);
+         // delay(2);
+          }
+      }
+    }
+    //erase
+    else if(receivedChar=='e'){
+      Serial.println("Erasing");
+      EEPROM.write(0, 0);
+      EEPROM.write(1, 0);
+      EEPROM.write(2, 0);
+      EEPROM.write(511, 0);
+      mode_op=0;
+    }
+    //go back : q
+    else if(receivedChar=='q'){
+      Serial.print("Quit");
+      mode_op=0;
+    }
+}
+}
+void establishContact() {
+  while (Serial.available() <= 0){
+    Serial.write('A');   // send a capital A
+    delay(300);
+    }
+}
