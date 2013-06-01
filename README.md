@@ -10,8 +10,11 @@ When connected on the usb port the arduino send a series of AAAAAAA for handshak
 Each command has to be followed by ENTER (\n)
 
 l  : Live Mode - the raw data from sensors is send to the serial port in raw
+
 w  : Write mode - the data is written on the flash chip
+
 r  : Read mode - the data is read from the serial chip
+
 q  : Quit - interrupt the precedent command
 
 
