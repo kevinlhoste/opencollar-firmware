@@ -345,7 +345,8 @@ if (Serial.available() > 0) {
     }
     //go back : q
     else if(receivedChar=='q'){
-      Serial.print("Quit");
+      Serial.println("Quit");
+	  establishContact();
       mode_op=0;
     }
 }
