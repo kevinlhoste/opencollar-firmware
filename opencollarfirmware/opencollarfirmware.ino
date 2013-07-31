@@ -44,6 +44,7 @@ V0005 add gyro
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
+
 // class default I2C address is 0x68
 // specific I2C addresses may be passed as a parameter here
 // AD0 low = 0x68 (default for InvenSense evaluation board)
@@ -67,7 +68,10 @@ int currentPage=0;
 int currentBlock1=0;
 int currentBlock2=0;
 int16_t myData[6];
-
+unsigned long time0 =0;
+unsigned long time1 =0;
+int cycle_duration=100000; //default 10hz
+int sampling_rate=10; //in hz
 void setup() {
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
@@ -94,6 +98,9 @@ void setup() {
 void loop() {
     checkSerial();  
     if(mode_op==1) {
+      //initialize cycle duration
+      sampling_rate=100;
+      cycle_duration=1000000/sampling_rate;
       // read raw accel/gyro measurements from device
       accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
       // these methods (and a few others) are also available
@@ -107,6 +114,12 @@ void loop() {
       Serial.println(gx); //Serial.print("\t");
       Serial.println(gy); //Serial.print("\t");
       Serial.println(gz);
+      time0=time1;
+      time1=micros();
+     // Serial.println(time1-time0);
+      optimizeTime();
+      //Serial.println(time1-time0);
+      time1=micros();
       /*
       // blink LED to indicate activity
       blinkState = !blinkState;
@@ -350,6 +363,12 @@ if (Serial.available() > 0) {
       mode_op=0;
     }
 }
+}
+void optimizeTime(){
+  time1=micros();
+  while ((time1-time0)<cycle_duration){
+    time1=micros();
+    }
 }
 void establishContact() {
   while (Serial.available() <= 0){
