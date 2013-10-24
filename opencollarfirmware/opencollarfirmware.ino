@@ -1,26 +1,7 @@
 
 
 /* ============================================
-I2Cdev device library code is placed under the MIT license
-Copyright (c) 2011 Jeff Rowberg
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+License infos
 ===============================================
 */
 /*
@@ -57,7 +38,7 @@ int16_t gx, gy, gz;
 #define LED_PIN 13
 bool blinkState = false;
 char receivedChar=0;
-int mode_op;
+int mode_op=0;
 //flash
 //general page sur 16 bits
 uint16_t page   = 0;
@@ -70,8 +51,28 @@ int currentBlock2=0;
 int16_t myData[6];
 unsigned long time0 =0;
 unsigned long time1 =0;
-int cycle_duration=100000; //default 10hz
-int sampling_rate=10; //in hz
+/*autostart variables*/
+unsigned long startupTime=0;
+int autoStart=1;
+int autoStart_mode=2;
+
+int cycle_duration=10000; //default 10hz
+int sampling_rate=100; //in hz
+/* Acc range 
+ * 0 = +/- 2g
+ * 1 = +/- 4g
+ * 2 = +/- 8g
+ * 3 = +/- 16g
+ */
+uint8_t acc_range = 1; //+-2g
+/* Gyro range 
+ * 0 = +/- 250 degrees/sec
+ * 1 = +/- 500 degrees/sec
+ * 2 = +/- 1000 degrees/sec
+ * 3 = +/- 2000 degrees/sec
+ */
+uint8_t gyro_range = 0; 
+
 void setup() {
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
@@ -83,19 +84,23 @@ void setup() {
     // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
     // it's really up to you depending on your project)
     Serial.begin(38400);
-
     // initialize device
     //  Serial.println("Initializing I2C devices...");
     accelgyro.initialize();
+    accelgyro.setFullScaleAccelRange(acc_range);
+    accelgyro.setFullScaleGyroRange(gyro_range);
     // verify connection
     //  Serial.println("Testing device connections...");
     //   Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
     // configure Arduino LED for
-    pinMode(LED_PIN, OUTPUT);
-    establishContact();
+    //pinMode(LED_PIN, OUTPUT);
+    Serial.println("toto"); 
+    startupDelay();
+    //establishContact();
 }
 
 void loop() {
+  
     checkSerial();  
     if(mode_op==1) {
       //initialize cycle duration
@@ -202,26 +207,12 @@ void loop() {
         Serial.print("\n");*/
         }   
     }
-     }
-   else if(mode_op==3) {/*
-      uint8_t MSB;
-      uint8_t LSB;
-      uint16_t value;
-      uint16_t k=0;
-      for(k=0;k<=page;k++)
-        {
-        dataflash.pageRead(k, 0); 
-        for(int j=0;j<528;j++) { 
-          MSB = SPI.transfer(0xff);
-          // Serial.println(toto0);
-          LSB = SPI.transfer(0xff);
-          //Serial.println(toto1);
-          value=LSB;
-          value <<= 8;
-          value |=MSB;
-          Serial.println(value);
-          }
-        }*/
+     time0=time1;
+      time1=micros();
+     // Serial.println(time1-time0);
+      optimizeTime();
+      //Serial.println(time1-time0);
+      time1=micros();
      }
 }
 void test_write()
@@ -300,6 +291,23 @@ if (Serial.available() > 0) {
       //Serial.println("Live mode");
       mode_op=1;
     }
+    /*mode infos*/
+      //Serial.println(acc_range);
+      if(receivedChar=='i'){
+      acc_range=accelgyro.getFullScaleAccelRange();
+      gyro_range=accelgyro.getFullScaleGyroRange();
+      Serial.println("Accelerometer range: ");
+      Serial.print(acc_range);
+      Serial.println("Gyro range: ");
+      Serial.print(gyro_range);
+      mode_op=0;
+      }
+    /*acknowledge of connection*/
+    else if(receivedChar=='A'){
+      Serial.println("A");
+       mode_op=0;
+      //mode_op=1;
+    }
     else if(receivedChar=='w'){
       Serial.println("Write mode");
       //test_write2();
@@ -346,6 +354,8 @@ if (Serial.available() > 0) {
          // delay(2);
           }
       }
+    mode_op=0;
+    startupDelay();
     }
     //erase
     else if(receivedChar=='e'){
@@ -359,8 +369,9 @@ if (Serial.available() > 0) {
     //go back : q
     else if(receivedChar=='q'){
       Serial.println("Quit");
-	  establishContact();
+	//  establishContact();
       mode_op=0;
+      startupDelay();
     }
 }
 }
@@ -375,4 +386,25 @@ void establishContact() {
     Serial.write('A');   // send a capital A
     delay(300);
     }
+}
+void startupDelay() {
+  startupTime=millis();
+  while (startupTime <= 30000 && mode_op==0){
+     startupTime=millis();
+     Serial.println(startupTime); 
+     // Serial.write('a'); 
+    checkSerial();
+    delay(300);
+    }
+  if(mode_op==0 && autoStart==1)
+     {
+      Serial.println("Write mode"); 
+      EEPROM.write(0, 0);
+      EEPROM.write(1, 0);
+      EEPROM.write(2, 0);
+      EEPROM.write(511, 1);
+      buffer=0;
+      dataflash.bufferWrite(buffer, 0);
+      mode_op=2; 
+     }
 }
