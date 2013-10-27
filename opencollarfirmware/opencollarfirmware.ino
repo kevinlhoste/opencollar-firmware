@@ -53,10 +53,11 @@ unsigned long time0 =0;
 unsigned long time1 =0;
 /*autostart variables*/
 unsigned long startupTime=0;
-int autoStart=1;
+int autoStart=0;
 int autoStart_mode=2;
+int verbose=0;
 
-int cycle_duration=10000; //default 10hz
+int cycle_duration=1000; //default 10hz 100hz=10000
 int sampling_rate=100; //in hz
 /* Acc range 
  * 0 = +/- 2g
@@ -71,7 +72,7 @@ uint8_t acc_range = 1; //+-2g
  * 2 = +/- 1000 degrees/sec
  * 3 = +/- 2000 degrees/sec
  */
-uint8_t gyro_range = 0; 
+uint8_t gyro_range = 1; 
 
 void setup() {
     // join I2C bus (I2Cdev library doesn't do this automatically)
@@ -171,43 +172,43 @@ void loop() {
       buffercount+=12;
      //if the buffer is full transfer buffer to page
      if(buffercount == 528) {
-    //  Serial.println("transfer page");
+      Serial.println("transfer page");
       dataflash.bufferToPage(0, page);
-    //  Serial.println(page);
+      Serial.println(page);
       page ++;
       buffercount=0;
       buffer=0;
       dataflash.bufferWrite(buffer, 0);
-      if(currentPage==8 && currentBlock1<=254){
+      if(currentPage==7 && currentBlock1<255){
         currentPage=0;
         currentBlock1++;
         EEPROM.write(0,currentBlock1);
         EEPROM.write(2, currentPage);
-      /*  Serial.print("Block");
+        Serial.print("Block");
         Serial.print(currentBlock1);
-        Serial.print("\n");*/
+        Serial.print("\n");
         } 
-      else if(currentPage<8 && currentBlock1<=255){
+      else if(currentPage<7 && currentBlock1<255){
         currentPage++;
         EEPROM.write(0,currentBlock1);
         EEPROM.write(2, currentPage);
         }
-      else if(currentPage<8 && currentBlock1==255 && currentBlock2<=255){
+      else if(currentPage<7 && currentBlock1==255 && currentBlock2<=255){
         currentPage++;
         EEPROM.write(0,currentBlock1);
         EEPROM.write(2, currentPage);
         }  
-      else if(currentPage=8 && currentBlock1==255 && currentBlock2<=255){
+      else if(currentPage==7 && currentBlock1==255 && currentBlock2<=255){
         currentPage=0;
         currentBlock2++;
-       /* EEPROM.write(1,currentBlock2);
+        EEPROM.write(1,currentBlock2);
         EEPROM.write(2, currentPage);
-        Serial.print("Block2");
+        Serial.print("Block2: ");
         Serial.print(currentBlock2);
-        Serial.print("\n");*/
-        }   
+        Serial.print("\n");
+       }
     }
-     time0=time1;
+   time0=time1;
       time1=micros();
      // Serial.println(time1-time0);
       optimizeTime();
@@ -319,8 +320,9 @@ if (Serial.available() > 0) {
     //read
     else if(receivedChar=='r'){
       //Serial.println("Read");
-      currentPage = EEPROM.read(2);
       currentBlock1=EEPROM.read(0);
+      currentBlock2=EEPROM.read(1);
+      currentPage = EEPROM.read(2);
      /* Serial.print("Block:");
       Serial.print(currentBlock1);
       Serial.print("\n");
@@ -328,7 +330,8 @@ if (Serial.available() > 0) {
       Serial.print(currentPage);
       Serial.print("\n");*/
       if(currentBlock1==0) page=currentPage;
-      else page=(currentBlock1*8)+currentPage;
+      else if(currentBlock1>0 && currentBlock2==0) page=(currentBlock1*8)+currentPage;
+      else if(currentBlock1==255 && currentBlock2>0) page=2040+(currentBlock1*8)+currentPage; //255*8=2040
      /* Serial.print("Page total:");
       Serial.print(page);
       Serial.print("\n");*/
@@ -342,6 +345,7 @@ if (Serial.available() > 0) {
       dataflash.pageRead(k, 0); 
      /* Serial.print("*************************");
       Serial.println(k);*/
+      //read each page : 1 page = 528 byte/2=263
         for(int j=0;j<=263;j++) { 
           MSB = SPI.transfer(0xff);
           // Serial.println(toto0);
@@ -360,11 +364,48 @@ if (Serial.available() > 0) {
     //erase
     else if(receivedChar=='e'){
       Serial.println("Erasing");
-      EEPROM.write(0, 0);
-      EEPROM.write(1, 0);
-      EEPROM.write(2, 0);
-      EEPROM.write(511, 0);
+      EEPROM.write(0, 0); //erase currentblock1
+      EEPROM.write(1, 0); //erase currentblock2
+      EEPROM.write(2, 0); //erase currentpage
+      EEPROM.write(511, 0); //not sure is needed
+      page=0;
+      currentBlock1=0;
+      currentBlock2=0;
+      currentPage = 0;
       mode_op=0;
+    }
+    //mode check memory
+    else if(receivedChar=='x'){
+      //Serial.println("Read");
+      currentBlock1=EEPROM.read(0);
+      currentBlock2=EEPROM.read(1);
+      currentPage = EEPROM.read(2);
+      Serial.print("Block1:");
+      Serial.print(currentBlock1);
+      Serial.print("\n");
+      Serial.print("Block2:");
+      Serial.print(currentBlock2);
+      Serial.print("\n");
+      Serial.print("Page:");
+      Serial.print(currentPage);
+      Serial.print("\n");
+      if(currentBlock1==0) page=currentPage;
+      else if(currentBlock1>0 && currentBlock2==0) page=(currentBlock1*8)+currentPage;
+      else if(currentBlock1==255 && currentBlock2>0) page=2040+(currentBlock2*8)+currentPage; //255*8=2040
+      Serial.print("Total Pages:");
+      Serial.print(page);
+      Serial.print("\n");
+    }
+    //mode check memory transfert to processing
+    else if(receivedChar=='t'){
+      //Serial.println("Read");
+      currentBlock1=EEPROM.read(0);
+      currentBlock2=EEPROM.read(1);
+      currentPage = EEPROM.read(2);
+      if(currentBlock1==0) page=currentPage;
+      else if(currentBlock1>0 && currentBlock2==0) page=(currentBlock1*8)+currentPage;
+      else if(currentBlock1==255 && currentBlock2>0) page=2040+(currentBlock2*8)+currentPage; //255*8=2040
+      Serial.println(page);
     }
     //go back : q
     else if(receivedChar=='q'){
@@ -391,7 +432,7 @@ void startupDelay() {
   startupTime=millis();
   while (startupTime <= 30000 && mode_op==0){
      startupTime=millis();
-     Serial.println(startupTime); 
+     if(verbose==1) Serial.println(startupTime); 
      // Serial.write('a'); 
     checkSerial();
     delay(300);
@@ -403,6 +444,10 @@ void startupDelay() {
       EEPROM.write(1, 0);
       EEPROM.write(2, 0);
       EEPROM.write(511, 1);
+      page=0;
+      currentBlock1=0;
+      currentBlock2=0;
+      currentPage = 0;
       buffer=0;
       dataflash.bufferWrite(buffer, 0);
       mode_op=2; 
