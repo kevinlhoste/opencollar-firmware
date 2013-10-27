@@ -53,11 +53,11 @@ unsigned long time0 =0;
 unsigned long time1 =0;
 /*autostart variables*/
 unsigned long startupTime=0;
-int autoStart=0;
+int autoStart=1;
 int autoStart_mode=2;
 int verbose=0;
 
-int cycle_duration=1000; //default 10hz 100hz=10000
+int cycle_duration=10000; //default 10hz 100hz=10000
 int sampling_rate=100; //in hz
 /* Acc range 
  * 0 = +/- 2g
@@ -172,9 +172,12 @@ void loop() {
       buffercount+=12;
      //if the buffer is full transfer buffer to page
      if(buffercount == 528) {
-      Serial.println("transfer page");
+     
       dataflash.bufferToPage(0, page);
-      Serial.println(page);
+      if(verbose==1){
+        Serial.println("transfer page");
+        Serial.println(page);
+      }
       page ++;
       buffercount=0;
       buffer=0;
@@ -184,9 +187,11 @@ void loop() {
         currentBlock1++;
         EEPROM.write(0,currentBlock1);
         EEPROM.write(2, currentPage);
-        Serial.print("Block");
-        Serial.print(currentBlock1);
-        Serial.print("\n");
+        if(verbose==1){
+          Serial.print("Block");
+          Serial.print(currentBlock1);
+          Serial.print("\n");
+          }
         } 
       else if(currentPage<7 && currentBlock1<255){
         currentPage++;
@@ -203,10 +208,12 @@ void loop() {
         currentBlock2++;
         EEPROM.write(1,currentBlock2);
         EEPROM.write(2, currentPage);
-        Serial.print("Block2: ");
-        Serial.print(currentBlock2);
-        Serial.print("\n");
-       }
+        if(verbose==1) {
+          Serial.print("Block2: ");
+          Serial.print(currentBlock2);
+          Serial.print("\n");
+         }
+      }
     }
    time0=time1;
       time1=micros();
