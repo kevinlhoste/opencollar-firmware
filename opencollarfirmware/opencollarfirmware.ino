@@ -317,9 +317,12 @@ if (Serial.available() > 0) {
       //mode_op=1;
     }
     else if(receivedChar=='w'){
-      Serial.println("Write mode");
+      //Serial.println("Write mode");
       //test_write2();
-      EEPROM.write(511, 1);
+      EEPROM.write(0, 0); //erase currentblock1
+      EEPROM.write(1, 0); //erase currentblock2
+      EEPROM.write(2, 0); //erase currentpage
+      EEPROM.write(511, 0); //not sure is needed
       buffer=0;
       dataflash.bufferWrite(buffer, 0);
       mode_op=2;
@@ -366,7 +369,7 @@ if (Serial.available() > 0) {
           }
       }
     mode_op=0;
-    startupDelay();
+    //startupDelay();
     }
     //erase
     else if(receivedChar=='e'){
@@ -419,7 +422,7 @@ if (Serial.available() > 0) {
       Serial.println("Quit");
 	//  establishContact();
       mode_op=0;
-      startupDelay();
+      //startupDelay();
     }
 }
 }
