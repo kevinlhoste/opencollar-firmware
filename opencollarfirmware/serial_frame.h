@@ -1,6 +1,8 @@
 #ifndef SERIAL_FRAME_H
 #define SERIAL_FRAME_H
 
+#include "serial_functions.h"
+
 /* frame identifiers */
 #define NO_FRAME 0
 
@@ -15,6 +17,7 @@
 #define PING_FRAME 'A'
 #define WRITE_MODE_FRAME 'w'
 #define READ_MEMORY_FRAME 'r'
+#define READ_MEMORY_BYTE_FRAME 'R'
 #define ERASE_MEMORY_FRAME 'e'
 #define CHECK_MEMORY_FRAME 'x'
 #define CHECK_PROSSING_TRASNFERT_FRAME 't'
@@ -30,6 +33,7 @@ char frame[FRAME_BUFFER_SIZE];
 void sf_setup(void)
 {
     Serial.begin(38400);
+    Serial1.begin(9600);
 }
 
 /*
@@ -39,41 +43,42 @@ char sf_getFrame(void)
 {
     char frame_type;
     int i;
-    if(!Serial.available()) return NO_FRAME;
+    if(!serial_available()) return NO_FRAME;
     
-    frame_type = Serial.read();
+    frame_type = serial_read();
     switch(frame_type)
     {
+        case ' ':
+            return NO_FRAME;
+            break;
         case ACCEL_RANGE_FRAME:
         case GYRO_RANGE_FRAME:
-            frame[0] = Serial.read(); //first byte is useless
-            if(Serial.available()) 
-            { 
-                frame[0] = Serial.read(); 
-                if(frame[0] < '0' || frame[0] > '3')
-                {
-                    Serial.println("M bad format");
-                    frame_type = NO_FRAME;
-                }
+            while(!serial_available()){}
+            frame[0] = serial_read(); //first byte is useless
+            while(!serial_available()){}
+            
+            frame[0] = serial_read(); 
+            if(frame[0] < '0' || frame[0] > '3')
+            {
+                serial_println_str("M bad format");
+                frame_type = NO_FRAME;
             } 
-            else 
-            { 
-                Serial.println("M bad format");
-                frame_type = NO_FRAME; 
-            }
+
             break;
 
         case SAMPLING_RATE_FRAME:
-            frame[0] = Serial.read(); //first byte is useless
+            while(!serial_available()){}
+            frame[0] = serial_read(); //first byte is useless
             i = 0;
-            for(i = 0; Serial.available(); i++)
+            for(i = 0;; i++)
             {
-                frame[i] = Serial.read();
+                if(!serial_available()) continue;
+                frame[i] = serial_read();
                 if(frame[i] < '0' || frame[i] > '9') { break; }
             }
             if(i == 0)
             {
-                Serial.println("M bad format");
+                serial_println_str("M bad format");
                 frame_type = NO_FRAME; 
             }
             else { frame[i] = '\0'; }
@@ -85,17 +90,18 @@ char sf_getFrame(void)
         case PING_FRAME:
         case WRITE_MODE_FRAME:
         case READ_MEMORY_FRAME:
+        case READ_MEMORY_BYTE_FRAME:
         case ERASE_MEMORY_FRAME:
         case QUIT_FRAME:
             break;
         
         //test case
         case '\n':
-            Serial.println("M ooops, \\n");
+            serial_println_str("M ooops, \\n");
             frame_type = NO_FRAME;
         default:
-            Serial.print("M unknown frame header ");
-            Serial.println(frame_type);
+            serial_print_str("M unknown frame header ");
+            serial_println_char(frame_type);
             frame_type = NO_FRAME;
             break;
     }

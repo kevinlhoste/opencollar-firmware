@@ -5,30 +5,48 @@
 * The first page of the memory will be used to store meta data
 */
 
+#include<string.h>
 
 #define CHAR_MODE 0
 #define BYTE_MODE 1
+
+char itoa_buff[20];
+
+void 
+divide_int_print(int16_t value)
+{
+  serial_print_char(value&255);
+  //serial_print_char(' ');
+  serial_print_char((value >> 8)&255);
+  //serial_print_char(' ');
+}
 
 void
 print_accelgyro(int mode)
 {
     if(mode == CHAR_MODE)
     {
-        Serial.print(accelgyro.ax);
-        Serial.print(' ');
-        Serial.print(accelgyro.ay);
-        Serial.print(' ');
-        Serial.print(accelgyro.az);
-        Serial.print(' ');
-        Serial.print(accelgyro.gx);
-        Serial.print(' ');
-        Serial.print(accelgyro.gy);
-        Serial.print(' ');
-        Serial.println(accelgyro.gz);
+        serial_print_str(itoa(accelgyro.ax,itoa_buff,10));
+        serial_print_char(' ');
+        serial_print_str(itoa(accelgyro.ay,itoa_buff,10));
+        serial_print_char(' ');
+        serial_print_str(itoa(accelgyro.az,itoa_buff,10));
+        serial_print_char(' ');
+        serial_print_str(itoa(accelgyro.gx,itoa_buff,10));
+        serial_print_char(' ');
+        serial_print_str(itoa(accelgyro.gy,itoa_buff,10));
+        serial_print_char(' ');
+        serial_println_str(itoa(accelgyro.gz,itoa_buff,10));
     }
     else if(mode == BYTE_MODE)
     {
-        /* TODO */
+        divide_int_print(accelgyro.ax);
+        divide_int_print(accelgyro.ay);
+        divide_int_print(accelgyro.az);
+        divide_int_print(accelgyro.gx);
+        divide_int_print(accelgyro.gy);
+        divide_int_print(accelgyro.gz);
+        serial_print_char('\n');
     }
 }
 
@@ -168,13 +186,13 @@ flash_read_accelgyro(int mode)
 {
     if(flash_read_meta_data())
         { Serial.println("M corrupted memory"); return; }
-    Serial.print('i');
-    Serial.print(' ');
-    Serial.print((int)flashMem.acce_scale);
-    Serial.print(' ');
-    Serial.print((int)flashMem.gyro_scale);
-    Serial.print(' ');
-    Serial.println(flashMem.sampling);
+    serial_print_char('i');
+    serial_print_char(' ');
+    serial_print_int((int)flashMem.acce_scale);
+    serial_print_char(' ');
+    serial_print_int((int)flashMem.gyro_scale);
+    serial_print_char(' ');
+    serial_println_int(flashMem.sampling);
     int i, j;
     flashMem.page = (flashMem.n*12)/528;
 
@@ -186,9 +204,12 @@ flash_read_accelgyro(int mode)
         for(j = 0; j < 528; j+=12)
         {
             read_accelgyro();
-            Serial.print("r ");
+            if(mode == CHAR_MODE)
+              serial_print_str("r ");
+            else
+              serial_print_str("R ");
             print_accelgyro(mode);
-
+            if(used_serial)delay(30);
         }
     }
     flashMem.dataflash.pageToBuffer(i,0);
@@ -196,9 +217,10 @@ flash_read_accelgyro(int mode)
     j = (flashMem.n*12)%528;
     for(i = 1; i < j; i+=12)
     {
-        Serial.print("r ");
+        serial_print_str("r ");
         read_accelgyro();
         print_accelgyro(mode);
+        delay(10);
     }
 }
 

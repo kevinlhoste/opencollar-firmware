@@ -1,6 +1,8 @@
 #ifndef ACCELGYRO_H
 #define ACCELGYRO_H
 
+#include "serial_functions.h"
+
 /* acc_range values */
 #define ACC_2G 0
 #define ACC_4G 1
@@ -26,7 +28,7 @@ char gyro_range;
 {                                                                       \
     accelgyro.mpu.setFullScaleAccelRange(value);                        \
     if(accelgyro.mpu.getFullScaleAccelRange() != (value))               \
-        { Serial.println("M failed to configure"); }                    \
+        { serial_println_str("M failed to configure"); }                    \
     else { accelgyro.acc_range = (value); }                             \
 }
 
@@ -34,7 +36,7 @@ char gyro_range;
 {                                                                       \
     accelgyro.mpu.setFullScaleGyroRange(value);                         \
     if(accelgyro.mpu.getFullScaleGyroRange() != value)        \
-        { Serial.println("M failed to configure"); }                    \
+        { serial_println_str("M failed to configure"); }                    \
     else { accelgyro.gyro_range = value; }                              \
 }
 
@@ -64,6 +66,7 @@ accelgyro_get(void)
                              &accelgyro.gx,
                              &accelgyro.gy,
                              &accelgyro.gz);
+    
 }
 
 #endif

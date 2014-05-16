@@ -44,6 +44,8 @@ THE SOFTWARE.
 
 /* Global variables */
 
+#define MY_ID 0
+
 char frame_type;
 
 /* operating modes */
@@ -53,7 +55,7 @@ char frame_type;
 #define LIVE_SERIAL_MODE (WRITE_MODE + 1)
 char run_mode;
 char is_write_mode;
-
+char button;
 
 void
 startupDelay()
@@ -66,10 +68,14 @@ startupDelay()
 void 
 setup(void)
 {
+    pinMode(4, OUTPUT);
+    pinMode(8, INPUT);
+    
+    button = 0;
+    sf_setup();
     accelgyro_setup();
     flash_setup();
-    sf_setup();
-
+    
     run_mode = STANDBY_MODE;
     is_write_mode = 0;
 
@@ -99,16 +105,18 @@ mode_handler(void)
         switch(run_mode)
         {
             case LIVE_MODE:
-                /* TODO: send frame with data */
+                serial_print_str("L ");
+                print_accelgyro(BYTE_MODE);
                 break;
             case LIVE_SERIAL_MODE:
-                Serial.print("l ");
+                serial_print_str("l ");
                 print_accelgyro(CHAR_MODE);
                 break;
             case WRITE_MODE:
                 if(!is_write_mode)
                 {
                     is_write_mode = 1;
+                    digitalWrite(4,1);
                     flash_write_mode_start();
                 }
                 flash_write_accelgyro();
@@ -117,12 +125,10 @@ mode_handler(void)
 
         delay_time = 1000000/accelgyro.sampling_rate;
         time1 = micros();
-
         if((time1 - time0) < delay_time) {
-            //delayMicroseconds((delay_time - (time1 - time0)));
-            delay((delay_time- (time1 - time0))/1000);
+            delayMicroseconds((delay_time - (time1 - time0)));
+            //delay((delay_time- (time1 - time0))/1000);
         }
-
     }
 }
 
@@ -138,18 +144,20 @@ frame_handler(void)
 
         case INFORMATION_FRAME:
             /* send message with informations */
-            Serial.print(INFORMATION_FRAME);
-            Serial.print(' ');
-            Serial.print(accelgyro.acc_range);
-            Serial.print(' ');
-            Serial.print(accelgyro.gyro_range);
-            Serial.print(' ');
-            Serial.println(accelgyro.sampling_rate);
+            serial_print_char(INFORMATION_FRAME);
+            serial_print_char(' ');
+            serial_print_int(MY_ID);
+            serial_print_char(' ');
+            serial_print_int(accelgyro.acc_range);
+            serial_print_char(' ');
+            serial_print_int(accelgyro.gyro_range);
+            serial_print_char(' ');
+            serial_println_int(accelgyro.sampling_rate);
             break;
 
         case PING_FRAME:
             /* send a pong */
-            Serial.println(PING_FRAME);
+            serial_println_char(PING_FRAME);
             break;
 
         case WRITE_MODE_FRAME:
@@ -160,6 +168,11 @@ frame_handler(void)
 
         case READ_MEMORY_FRAME:
             flash_read_accelgyro(CHAR_MODE);
+            run_mode = STANDBY_MODE;
+            break;
+
+        case READ_MEMORY_BYTE_FRAME:
+            flash_read_accelgyro(BYTE_MODE);
             run_mode = STANDBY_MODE;
             break;
 
@@ -174,37 +187,57 @@ frame_handler(void)
         case ACCEL_RANGE_FRAME:
             aux = SF_RANGE;
             ACCELGYRO_SET_ACCELRANGE(aux);
-            Serial.println(PING_FRAME);
+            serial_println_char(PING_FRAME);
             break;
  
         case GYRO_RANGE_FRAME:
             aux = SF_RANGE;
             ACCELGYRO_SET_GYRORANGE(aux);
-            Serial.println(PING_FRAME);
+            serial_println_char(PING_FRAME);
             break;
 
         case SAMPLING_RATE_FRAME:
             accelgyro.sampling_rate = sf_get_sampling_rate();
-            Serial.println(PING_FRAME);
+            serial_println_char(PING_FRAME);
             break;
 
         default:
             /* Send unknown frame message */
-            Serial.println(UNKNOWN_FRAME);
+            serial_println_char(UNKNOWN_FRAME);
             break;
 
     }
 }
 
+int loop_counter = 0;
+
+
 void
 loop()
 {
-    frame_type = sf_getFrame();
+    //loop_counter++;
+    //if(loop_counter == 100000) loop_counter = 0;
+    //if(loop_counter == 0) Serial.println("loop");
+    if(digitalRead(8) == HIGH && button == 0)
+    {
+        button = 1;
+        frame_type = WRITE_MODE_FRAME;
+    }
+    else if(digitalRead(8) == LOW && button == 1)
+    {
+        button = 0;
+        frame_type = QUIT_FRAME;
+    }
+    else
+    {
+        frame_type = sf_getFrame();
+    }
     if(frame_type)
     {
         if(is_write_mode)
         {
             is_write_mode = 0;
+            digitalWrite(4,0);
             flash_write_buffer();
         }
         frame_handler();
