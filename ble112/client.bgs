@@ -1,0 +1,123 @@
+dim uart1
+dim result
+
+dim in(20) # endpoint data in
+dim in_len
+dim out(20) # endpoint data out
+dim out_len
+dim connected
+
+event system_boot(major, minor, patch, build, ll_version, protocol_version, hw)
+    
+	call hardware_io_port_write(0, $FF, $00)
+	call hardware_io_port_config_direction(0,$FF)
+	call hardware_io_port_write(0, $1, $0)
+
+    uart1 = system_endpoint_uart1
+	connected = 0
+
+    call system_endpoint_set_watermarks(uart1, 0, 0) # disable watermarks
+    
+    call gap_set_scan_parameters(1600, 800, 1)
+    call gap_discover(gap_discover_generic)
+    
+end
+
+dim temp_buf(16)
+dim i
+dim j
+dim ad_field_length
+dim ad_field_type
+
+event gap_scan_response(rssi, packet_type, sender, address_type, bond, data_len, data_data)
+    if packet_type = 0 then
+		temp_buf(0:16) = "\xcc\x77\xba\xf1\x42\x27\x4d\x8e\x9b\x46\xcb\xe7\x66\x16\xd5\x0b"
+		#temp_buf(0:16) = "\xcd\x77\xba\xf1\x42\x27\x4d\x8e\x9b\x46\xcb\xe7\x66\x16\xd5\x0b"
+		i = 0
+		while i < data_len
+			ad_field_length = data_data(i:1)
+            ad_field_type = data_data(i + 1:1)
+			
+			if ad_field_type = $06 || ad_field_type = $07 then
+                # partial ($06) or complete ($07) list of 128-bit UUIDs
+				j = 0
+				while j < ad_field_length - 1
+					if memcmp(data_data(i + j + 2), temp_buf(0), 16) && connected = 0 then
+						#call gap_connect_direct(sender(0:6), address_type, $40, $60, 100, 0)(ret_result, k)
+						call gap_connect_direct(sender(0:6), address_type, 6, 6, 500, 0) # 7.5ms connection interval meaning ~1.3KB/s
+						return
+					end if
+					j = j + 16
+				end while
+			end if
+			i = i + ad_field_length + 1
+		end while
+    end if
+
+end
+
+event connection_status(connection, flags, address, address_type, conn_interval, timeout, latency, bonding)
+	if connected = 0 then
+		call system_endpoint_set_watermarks(uart1, 1, 0) # set RX watermark
+    
+		call attclient_attribute_write(connection, xgatt_data + 2, 1, 2)
+    end if
+	connected = 1
+end
+
+event connection_disconnected(conn, reas)
+	connected = 0
+	
+    call system_endpoint_set_watermarks(uart1, 0, 0) # disable watermarks
+    
+    call gap_set_scan_parameters(1600, 800, 1)
+    call gap_discover(2)
+    
+	# set port 0 pin P0_0 to "0" = Turn off the LED
+	call hardware_io_port_write(0, $1, $0)
+	
+end
+
+event attclient_procedure_completed(connection, result2, handle)
+
+    if (handle = xgatt_data + 2) then
+		call hardware_io_port_write(0,$1,$1) #LED on
+    end if
+
+    if (handle = xgatt_data) then
+        call system_endpoint_set_watermarks(uart1, 1, $ff) # set RX watermark
+    end if
+    
+end
+
+event attclient_attribute_value(connection, handle, type, value_len, value_data)
+
+    if handle = xgatt_data then
+        out(0:value_len) = value_data(0:value_len)
+        out_len = value_len
+        call system_endpoint_set_watermarks(uart1, $ff, out_len) # set TX watermark
+    end if
+    
+end
+
+event system_endpoint_watermark_tx(curr_endpoint, size)
+
+    if curr_endpoint = uart1 then
+        call system_endpoint_set_watermarks(uart1, $ff, 0) # disable TX watermark
+        call system_endpoint_tx(uart1, out_len, out(0:out_len))
+        call attclient_indicate_confirm(0)
+    end if
+    
+end
+
+event system_endpoint_watermark_rx(curr_endpoint, size)
+
+        in_len = size
+        if in_len > 20 then
+            in_len = 20
+        end if
+        call system_endpoint_set_watermarks(uart1, 0, $ff) # disable RX watermark
+        call system_endpoint_rx(uart1, in_len)(result, in_len, in(0:in_len))
+        call attclient_attribute_write(0, xgatt_data, in_len, in(0:in_len))
+    
+end
