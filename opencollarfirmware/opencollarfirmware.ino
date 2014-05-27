@@ -74,12 +74,30 @@ setup(void)
     button = 0;
     sf_setup();
     accelgyro_setup();
-    flash_setup();
     
+    startupDelay();
+    
+    if(flash_setup())
+    {
+        flashMem.gyro_scale = GYRO_500;
+        ACCELGYRO_SET_GYRORANGE(GYRO_500);
+        flashMem.acce_scale = ACC_4G;
+        ACCELGYRO_SET_ACCELRANGE(ACC_4G);
+        accelgyro.sampling_rate = 10;
+        flashMem.sampling = 10;
+        flash_write_meta_data();
+    }
+    
+    
+    if(flash_read_config(&accelgyro.acc_range,&accelgyro.gyro_range,&accelgyro.sampling_rate))
+    {
+        accelgyro_default_conf();
+        flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
+    }
     run_mode = STANDBY_MODE;
     is_write_mode = 0;
+    
 
-    startupDelay();
 }
 
 
@@ -188,17 +206,20 @@ frame_handler(void)
             aux = SF_RANGE;
             ACCELGYRO_SET_ACCELRANGE(aux);
             serial_println_char(PING_FRAME);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
             break;
  
         case GYRO_RANGE_FRAME:
             aux = SF_RANGE;
             ACCELGYRO_SET_GYRORANGE(aux);
             serial_println_char(PING_FRAME);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
             break;
 
         case SAMPLING_RATE_FRAME:
             accelgyro.sampling_rate = sf_get_sampling_rate();
             serial_println_char(PING_FRAME);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
             break;
 
         default:

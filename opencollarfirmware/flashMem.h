@@ -78,7 +78,7 @@ struct FlashMem{
 }
 
 void
-flash_write_meta_data(void)
+flash_write_meta_data()
 {
     flashMem.dataflash.pageToBuffer(0,0);
     flashMem.dataflash.bufferWrite(0,0);
@@ -87,6 +87,18 @@ flash_write_meta_data(void)
     FLASH_WRITE_INT16(flashMem.sampling)
     SPI.transfer(flashMem.acce_scale);
     SPI.transfer(flashMem.gyro_scale);
+    flashMem.dataflash.bufferToPage(0,0);
+}
+
+void
+flash_write_config(char acce_scale, char gyro_scale, int sampling)
+{
+    flashMem.dataflash.pageToBuffer(0,0);
+    flashMem.dataflash.bufferWrite(0,8);
+    FLASH_WRITE_INT16(FLASH_SYNC);
+    FLASH_WRITE_INT16(sampling)
+    SPI.transfer(acce_scale);
+    SPI.transfer(gyro_scale);
     flashMem.dataflash.bufferToPage(0,0);
 }
 
@@ -108,7 +120,23 @@ flash_read_meta_data(void)
     else return 0;
 }
 
-void
+int
+flash_read_config(char *acce_scale, char *gyro_scale, int *sampling)
+{
+    int16_t synch_value;
+    flashMem.dataflash.pageToBuffer(0,0);
+    flashMem.dataflash.bufferRead(0,8);
+    FLASH_READ_INT16(synch_value);
+    FLASH_READ_INT16(*sampling)
+    *acce_scale = SPI.transfer(0xff);
+    *gyro_scale = SPI.transfer(0xff);
+    flashMem.dataflash.bufferToPage(0,0);
+    if(synch_value != FLASH_SYNC)
+        return 1;
+    else return 0;
+}
+
+int
 flash_setup(void)
 {
     int16_t synch_value; 
@@ -122,7 +150,9 @@ flash_setup(void)
     {
         Serial.println("M problem to read memory");
         flash_write_meta_data();
+        return 1;
     }
+    return 0;
 }
 
 void
@@ -186,7 +216,7 @@ flash_read_accelgyro(int mode)
 {
     if(flash_read_meta_data())
         { Serial.println("M corrupted memory"); return; }
-    serial_print_char('i');
+    serial_print_char('I');
     serial_print_char(' ');
     serial_print_int((int)flashMem.acce_scale);
     serial_print_char(' ');
@@ -217,7 +247,10 @@ flash_read_accelgyro(int mode)
     j = (flashMem.n*12)%528;
     for(i = 1; i < j; i+=12)
     {
-        serial_print_str("r ");
+        if(mode == CHAR_MODE)
+          serial_print_str("r ");
+        else
+          serial_print_str("R ");
         read_accelgyro();
         print_accelgyro(mode);
         delay(10);

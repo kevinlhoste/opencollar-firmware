@@ -8,8 +8,8 @@ char used_serial = 0;
 
 int serial_available()
 {
-  if(Serial.available()) return 1;
-  if(Serial1.available()) return 1;
+  if(Serial.available()) { used_serial = 0; return 1; }
+  if(Serial1.available()) { used_serial = 1; return 1; }
   if(used_serial == 1)
   {
     delayMicroseconds(10000);
@@ -19,8 +19,11 @@ int serial_available()
 char 
 serial_read(void)
 {
-  if(Serial.available()) { used_serial = 0; return Serial.read(); }
-  else { used_serial = 1; return Serial1.read(); }
+  char ret;
+  if(used_serial == 0) { return Serial.read(); }
+  ret = Serial1.read();
+  if(ret == -1) { used_serial = 0; return 0;}
+  return ret;
 }
 
 void
