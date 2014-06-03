@@ -10,10 +10,15 @@ int serial_available()
 {
   if(Serial.available()) { used_serial = 0; return 1; }
   if(Serial1.available()) { used_serial = 1; return 1; }
+  else {
+    used_serial = 0;
+    return 0;
+  }
   if(used_serial == 1)
   {
     delayMicroseconds(10000);
   }
+  
 }
 
 char 
