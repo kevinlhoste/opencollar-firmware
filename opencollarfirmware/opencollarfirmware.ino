@@ -77,7 +77,7 @@ setup(void)
     
     startupDelay();
     
-    if(flash_setup())
+   if(flash_setup())
     {
         flashMem.gyro_scale = GYRO_500;
         ACCELGYRO_SET_GYRORANGE(GYRO_500);
