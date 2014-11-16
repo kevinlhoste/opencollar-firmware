@@ -216,7 +216,7 @@ flash_read_accelgyro(int mode)
 {
     if(flash_read_meta_data())
         { Serial.println("M corrupted memory"); return; }
-    serial_print_char('I');
+    serial_print_char('i');
     serial_print_char(' ');
     serial_print_int((int)flashMem.acce_scale);
     serial_print_char(' ');
