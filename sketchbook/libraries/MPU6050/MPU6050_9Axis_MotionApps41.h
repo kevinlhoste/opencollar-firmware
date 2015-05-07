@@ -40,7 +40,51 @@ THE SOFTWARE.
 #define MPU6050_INCLUDE_DMP_MOTIONAPPS41
 
 #include "MPU6050.h"
-#include <avr/pgmspace.h>
+
+// Tom Carpenter's conditional PROGMEM code
+// http://forum.arduino.cc/index.php?topic=129407.0
+#ifndef __arm__
+    #include <avr/pgmspace.h>
+#else
+    // Teensy 3.0 library conditional PROGMEM code from Paul Stoffregen
+    #ifndef __PGMSPACE_H_
+        #define __PGMSPACE_H_ 1
+        #include <inttypes.h>
+
+        #define PROGMEM
+        #define PGM_P  const char *
+        #define PSTR(str) (str)
+        #define F(x) x
+
+        typedef void prog_void;
+        typedef char prog_char;
+        //typedef unsigned char prog_uchar;
+        typedef int8_t prog_int8_t;
+        typedef uint8_t prog_uint8_t;
+        typedef int16_t prog_int16_t;
+        typedef uint16_t prog_uint16_t;
+        typedef int32_t prog_int32_t;
+        typedef uint32_t prog_uint32_t;
+        
+        #define strcpy_P(dest, src) strcpy((dest), (src))
+        #define strcat_P(dest, src) strcat((dest), (src))
+        #define strcmp_P(a, b) strcmp((a), (b))
+        
+        #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
+        #define pgm_read_word(addr) (*(const unsigned short *)(addr))
+        #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
+        #define pgm_read_float(addr) (*(const float *)(addr))
+        
+        #define pgm_read_byte_near(addr) pgm_read_byte(addr)
+        #define pgm_read_word_near(addr) pgm_read_word(addr)
+        #define pgm_read_dword_near(addr) pgm_read_dword(addr)
+        #define pgm_read_float_near(addr) pgm_read_float(addr)
+        #define pgm_read_byte_far(addr) pgm_read_byte(addr)
+        #define pgm_read_word_far(addr) pgm_read_word(addr)
+        #define pgm_read_dword_far(addr) pgm_read_dword(addr)
+        #define pgm_read_float_far(addr) pgm_read_float(addr)
+    #endif
+#endif
 
 // NOTE! Enabling DEBUG adds about 3.3kB to the flash program size.
 // Debug output is now working even on ATMega328P MCUs (e.g. Arduino Uno)
@@ -77,7 +121,7 @@ THE SOFTWARE.
 // this block of memory gets written to the MPU on start-up, and it seems
 // to be volatile memory, so it has to be done each time (it only takes ~1
 // second though)
-const prog_uchar dmpMemory[MPU6050_DMP_CODE_SIZE] PROGMEM = {
+const unsigned char dmpMemory[MPU6050_DMP_CODE_SIZE] PROGMEM = {
     // bank 0, 256 bytes
     0xFB, 0x00, 0x00, 0x3E, 0x00, 0x0B, 0x00, 0x36, 0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x00,
     0x00, 0x65, 0x00, 0x54, 0xFF, 0xEF, 0x00, 0x00, 0xFA, 0x80, 0x00, 0x0B, 0x12, 0x82, 0x00, 0x01,
@@ -218,7 +262,7 @@ const prog_uchar dmpMemory[MPU6050_DMP_CODE_SIZE] PROGMEM = {
     0xDC, 0xB9, 0xA7, 0xF1, 0x26, 0x26, 0x26, 0xD8, 0xD8, 0xFF
 };
 
-const prog_uchar dmpConfig[MPU6050_DMP_CONFIG_SIZE] PROGMEM = {
+const unsigned char dmpConfig[MPU6050_DMP_CONFIG_SIZE] PROGMEM = {
 //  BANK    OFFSET  LENGTH  [DATA]
     0x02,   0xEC,   0x04,   0x00, 0x47, 0x7D, 0x1A,   // ?
     0x03,   0x82,   0x03,   0x4C, 0xCD, 0x6C,         // FCFG_1 inv_set_gyro_calibration
@@ -268,7 +312,7 @@ const prog_uchar dmpConfig[MPU6050_DMP_CONFIG_SIZE] PROGMEM = {
     // the FIFO output at the desired rate. Handling FIFO overflow cleanly is also a good idea.
 };
 
-const prog_uchar dmpUpdates[MPU6050_DMP_UPDATES_SIZE] PROGMEM = {
+const unsigned char dmpUpdates[MPU6050_DMP_UPDATES_SIZE] PROGMEM = {
     0x01,   0xB2,   0x02,   0xFF, 0xF5,
     0x01,   0x90,   0x04,   0x0A, 0x0D, 0x97, 0xC0,
     0x00,   0xA3,   0x01,   0x00,
@@ -413,14 +457,14 @@ uint8_t MPU6050::dmpInitialize() {
             setOTPBankValid(false);
 
             DEBUG_PRINTLN(F("Setting X/Y/Z gyro offsets to previous values..."));
-            setXGyroOffset(xgOffset);
-            setYGyroOffset(ygOffset);
-            setZGyroOffset(zgOffset);
+            setXGyroOffsetTC(xgOffset);
+            setYGyroOffsetTC(ygOffset);
+            setZGyroOffsetTC(zgOffset);
 
-            DEBUG_PRINTLN(F("Setting X/Y/Z gyro user offsets to zero..."));
-            setXGyroOffsetUser(0);
-            setYGyroOffsetUser(0);
-            setZGyroOffsetUser(0);
+            //DEBUG_PRINTLN(F("Setting X/Y/Z gyro user offsets to zero..."));
+            //setXGyroOffset(0);
+            //setYGyroOffset(0);
+            //setZGyroOffset(0);
 
             DEBUG_PRINTLN(F("Writing final memory update 1/19 (function unknown)..."));
             uint8_t dmpUpdate[16], j;
