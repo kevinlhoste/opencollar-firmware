@@ -26,6 +26,7 @@
 #define ACCEL_RANGE_FRAME '1'
 #define GYRO_RANGE_FRAME '2'
 #define SAMPLING_RATE_FRAME '3'
+#define OUTPUT_AXES_FRAME '4'
 
 #define FRAME_BUFFER_SIZE 32
 char frame[FRAME_BUFFER_SIZE];
@@ -82,6 +83,19 @@ char sf_getFrame(void)
                 frame_type = NO_FRAME; 
             }
             else { frame[i] = '\0'; }
+            break;
+   
+        case OUTPUT_AXES_FRAME:
+            while(!serial_available()){}
+            frame[0] = serial_read(); //first byte is useless
+            while(!serial_available()){}
+            
+            frame[0] = serial_read(); 
+            if(frame[0] < '1' || frame[0] > '9')
+            {
+                serial_println_str("M bad format");
+                frame_type = NO_FRAME;
+            } 
             break;
             
         case LIVE_MODE_FRAME:

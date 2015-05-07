@@ -85,14 +85,16 @@ setup(void)
         ACCELGYRO_SET_ACCELRANGE(ACC_4G);
         accelgyro.sampling_rate = 10;
         flashMem.sampling = 10;
+        accelgyro.enabled_sensors = 2;
+        flashMem.enabled_sensors = 2;
         flash_write_meta_data();
     }
     
     
-    if(flash_read_config(&accelgyro.acc_range,&accelgyro.gyro_range,&accelgyro.sampling_rate))
+    if(flash_read_config(&accelgyro.acc_range,&accelgyro.gyro_range,&accelgyro.sampling_rate,&accelgyro.enabled_sensors))
     {
         accelgyro_default_conf();
-        flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
+        flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate,accelgyro.enabled_sensors);
     }
     run_mode = STANDBY_MODE;
     is_write_mode = 0;
@@ -206,20 +208,26 @@ frame_handler(void)
             aux = SF_RANGE;
             ACCELGYRO_SET_ACCELRANGE(aux);
             serial_println_char(PING_FRAME);
-            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate,accelgyro.enabled_sensors);
             break;
  
         case GYRO_RANGE_FRAME:
             aux = SF_RANGE;
             ACCELGYRO_SET_GYRORANGE(aux);
             serial_println_char(PING_FRAME);
-            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate,accelgyro.enabled_sensors);
             break;
 
         case SAMPLING_RATE_FRAME:
             accelgyro.sampling_rate = sf_get_sampling_rate();
             serial_println_char(PING_FRAME);
-            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate,accelgyro.enabled_sensors);
+            break;
+
+        case OUTPUT_AXES_FRAME:
+            accelgyro.enabled_sensors = SF_RANGE;
+            serial_println_char(PING_FRAME);
+            flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate,accelgyro.enabled_sensors);
             break;
 
         default:

@@ -20,6 +20,7 @@ MPU6050 mpu;
 int16_t ax, ay, az; //acceleroscope axes
 int16_t gx, gy, gz; //gyroscope axes
 int16_t sampling_rate; //unity = Hz
+char enabled_sensors;
 char acc_range;
 char gyro_range;
 } accelgyro;
@@ -46,6 +47,7 @@ accelgyro_default_conf(void)
     ACCELGYRO_SET_ACCELRANGE(ACC_4G);
     ACCELGYRO_SET_GYRORANGE(GYRO_500);
     accelgyro.sampling_rate = 10;
+    accelgyro.enabled_sensors = 2;
 }
 
 void

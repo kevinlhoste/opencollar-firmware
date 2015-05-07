@@ -31,21 +31,39 @@ print_accelgyro(int mode)
         serial_print_str(itoa(accelgyro.ay,itoa_buff,10));
         serial_print_char(' ');
         serial_print_str(itoa(accelgyro.az,itoa_buff,10));
-        serial_print_char(' ');
-        serial_print_str(itoa(accelgyro.gx,itoa_buff,10));
-        serial_print_char(' ');
-        serial_print_str(itoa(accelgyro.gy,itoa_buff,10));
-        serial_print_char(' ');
-        serial_println_str(itoa(accelgyro.gz,itoa_buff,10));
+        if(accelgyro.enabled_sensors > 1)
+        {
+          serial_print_char(' ');
+          serial_print_str(itoa(accelgyro.gx,itoa_buff,10));
+          serial_print_char(' ');
+          serial_print_str(itoa(accelgyro.gy,itoa_buff,10));
+          serial_print_char(' ');
+          serial_print_str(itoa(accelgyro.gz,itoa_buff,10));
+        }
+        if(accelgyro.enabled_sensors > 2)
+        {
+          /* This is a stub code while we don't have the third sensor */
+          serial_print_str(" 0 0 0");
+        }
+        serial_print_char('\n');
     }
     else if(mode == BYTE_MODE)
     {
         divide_int_print(accelgyro.ax);
         divide_int_print(accelgyro.ay);
         divide_int_print(accelgyro.az);
-        divide_int_print(accelgyro.gx);
-        divide_int_print(accelgyro.gy);
-        divide_int_print(accelgyro.gz);
+        if(accelgyro.enabled_sensors > 1)
+        {
+          divide_int_print(accelgyro.gx);
+          divide_int_print(accelgyro.gy);
+          divide_int_print(accelgyro.gz);
+        }
+        if(accelgyro.enabled_sensors > 2)
+        {
+          divide_int_print(0);
+          divide_int_print(0);
+          divide_int_print(0);
+        }
         serial_print_char('\n');
     }
 }
@@ -61,6 +79,7 @@ struct FlashMem{
     int16_t sampling;
     char gyro_scale;
     char acce_scale;
+    char enabled_sensors;
 } flashMem;
 
 #define FLASH_READ_INT16(value)         \
@@ -87,11 +106,12 @@ flash_write_meta_data()
     FLASH_WRITE_INT16(flashMem.sampling)
     SPI.transfer(flashMem.acce_scale);
     SPI.transfer(flashMem.gyro_scale);
+    SPI.transfer(flashMem.enabled_sensors);
     flashMem.dataflash.bufferToPage(0,0);
 }
 
 void
-flash_write_config(char acce_scale, char gyro_scale, int sampling)
+flash_write_config(char acce_scale, char gyro_scale, int sampling, char enabled_sensors)
 {
     flashMem.dataflash.pageToBuffer(0,0);
     flashMem.dataflash.bufferWrite(0,8);
@@ -99,6 +119,7 @@ flash_write_config(char acce_scale, char gyro_scale, int sampling)
     FLASH_WRITE_INT16(sampling)
     SPI.transfer(acce_scale);
     SPI.transfer(gyro_scale);
+    SPI.transfer(enabled_sensors);
     flashMem.dataflash.bufferToPage(0,0);
 }
 
@@ -114,6 +135,7 @@ flash_read_meta_data(void)
     FLASH_READ_INT16(flashMem.sampling);
     flashMem.acce_scale = SPI.transfer(0xff);
     flashMem.gyro_scale = SPI.transfer(0xff);
+    flashMem.enabled_sensors = SPI.transfer(0xff);
     
     if(synch_value != FLASH_SYNC)
         return 1;
@@ -121,7 +143,7 @@ flash_read_meta_data(void)
 }
 
 int
-flash_read_config(char *acce_scale, char *gyro_scale, int *sampling)
+flash_read_config(char *acce_scale, char *gyro_scale, int *sampling, char *enabled_sensors)
 {
     int16_t synch_value;
     flashMem.dataflash.pageToBuffer(0,0);
@@ -130,6 +152,7 @@ flash_read_config(char *acce_scale, char *gyro_scale, int *sampling)
     FLASH_READ_INT16(*sampling)
     *acce_scale = SPI.transfer(0xff);
     *gyro_scale = SPI.transfer(0xff);
+    *enabled_sensors = SPI.transfer(0xff);
     flashMem.dataflash.bufferToPage(0,0);
     if(synch_value != FLASH_SYNC)
         return 1;
