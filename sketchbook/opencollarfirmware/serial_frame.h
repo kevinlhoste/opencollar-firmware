@@ -13,8 +13,8 @@
 /* user frames */
 #define LIVE_MODE_FRAME 'L'
 #define LIVE_SERIAL_FRAME 'l'
-#define LIVE_QUAT_MODE_FRAME 'T'
-#define LIVE_SERIAL_QUAT_FRAME 't'
+#define LIVE_QUAT_MODE_FRAME 'U'
+#define LIVE_SERIAL_QUAT_FRAME 'u'
 #define INFORMATION_FRAME 'i'
 #define PING_FRAME 'A'
 #define WRITE_MODE_FRAME 'w'

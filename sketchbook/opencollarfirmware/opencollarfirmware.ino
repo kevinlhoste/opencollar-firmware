@@ -171,11 +171,11 @@ mode_handler(void)
         switch(run_mode)
         {
             case LIVE_QUAT_MODE:
-                serial_print_str("T ");
+                serial_print_str("U ");
                 print_accelgyro_quaternions(BYTE_MODE);
                 break;
             case LIVE_SERIAL_QUAT_MODE:
-                serial_print_str("t ");
+                serial_print_str("u ");
                 print_accelgyro_quaternions(CHAR_MODE);
                 break;
             case WRITE_QUAT_MODE:
