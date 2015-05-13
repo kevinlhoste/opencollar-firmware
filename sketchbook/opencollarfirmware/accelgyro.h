@@ -158,16 +158,6 @@ accelgyro_quaternion_get(void)
 
         // display quaternion values in easy matrix form: w x y z
         accelgyro.mpu.dmpGetQuaternion(&accelgyro.q, accelgyro.fifoBuffer);
-
-        // TODO: remove this print
-        Serial.print("quat\t");
-        Serial.print(accelgyro.q.w);
-        Serial.print("\t");
-        Serial.print(accelgyro.q.x);
-        Serial.print("\t");
-        Serial.print(accelgyro.q.y);
-        Serial.print("\t");
-        Serial.println(accelgyro.q.z);
     }
 }
 

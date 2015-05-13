@@ -50,10 +50,16 @@ THE SOFTWARE.
 char frame_type;
 
 /* operating modes */
-#define STANDBY_MODE 0
-#define LIVE_MODE (STANDBY_MODE + 1)
-#define WRITE_MODE (LIVE_MODE + 1)
-#define LIVE_SERIAL_MODE (WRITE_MODE + 1)
+enum operatingMode {
+    STANDBY_MODE = 0,
+    LIVE_MODE,
+    WRITE_MODE,
+    LIVE_SERIAL_MODE,
+    LIVE_QUAT_MODE,
+    WRITE_QUAT_MODE,
+    LIVE_SERIAL_QUAT_MODE,
+};
+
 char run_mode;
 char is_write_mode;
 char button;
@@ -75,6 +81,8 @@ setup(void)
     button = 0;
     sf_setup();
     accelgyro_setup();
+    // TODO: this setup shouldn't be done here
+    accelgyro_quaternion_setup();
     
     startupDelay();
     
@@ -151,6 +159,44 @@ mode_handler(void)
             //delay((delay_time- (time1 - time0))/1000);
         }
     }
+
+    // TODO: This is a copy of the above code for quaternions
+    // this need to be refactored!!! Urgently!!!
+    if((run_mode == LIVE_QUAT_MODE) || 
+       (run_mode == WRITE_QUAT_MODE) ||
+       (run_mode == LIVE_SERIAL_QUAT_MODE))
+    {
+        time0 = micros();
+        accelgyro_quaternion_get();
+        switch(run_mode)
+        {
+            case LIVE_QUAT_MODE:
+                serial_print_str("T ");
+                print_accelgyro_quaternions(BYTE_MODE);
+                break;
+            case LIVE_SERIAL_QUAT_MODE:
+                serial_print_str("t ");
+                print_accelgyro_quaternions(CHAR_MODE);
+                break;
+            case WRITE_QUAT_MODE:
+                // TODO: Implement the necessary functions
+                //if(!is_write_mode)
+                //{
+                //    is_write_mode = 1;
+                //    digitalWrite(4,1);
+                //    flash_write_mode_start();
+                //}
+                //flash_write_accelgyro_quaternions();
+                break;
+        }
+
+        delay_time = 1000000/accelgyro.sampling_rate;
+        time1 = micros();
+        if((time1 - time0) < delay_time) {
+            delayMicroseconds((delay_time - (time1 - time0)));
+            //delay((delay_time- (time1 - time0))/1000);
+        }
+    }
 }
 
 void
@@ -161,6 +207,10 @@ frame_handler(void)
     {
         case LIVE_MODE_FRAME:
             run_mode = LIVE_MODE;
+            break;
+
+        case LIVE_QUAT_MODE_FRAME:
+            run_mode = LIVE_QUAT_MODE;
             break;
 
         case INFORMATION_FRAME:
@@ -203,6 +253,10 @@ frame_handler(void)
 
         case LIVE_SERIAL_FRAME:
             run_mode = LIVE_SERIAL_MODE;
+            break;
+
+        case LIVE_SERIAL_QUAT_FRAME:
+            run_mode = LIVE_SERIAL_QUAT_MODE;
             break;
 
         case ACCEL_RANGE_FRAME:

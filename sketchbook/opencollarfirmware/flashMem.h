@@ -68,6 +68,29 @@ print_accelgyro(int mode)
     }
 }
 
+void
+print_accelgyro_quaternions(int mode)
+{
+    if(mode == CHAR_MODE)
+    {
+        Serial.print(accelgyro.q.w);
+        Serial.print("\t");
+        Serial.print(accelgyro.q.x);
+        Serial.print("\t");
+        Serial.print(accelgyro.q.y);
+        Serial.print("\t");
+        Serial.println(accelgyro.q.z);
+    }
+    else if(mode == BYTE_MODE)
+    {
+        divide_int_print(accelgyro.q.w);
+        divide_int_print(accelgyro.q.x);
+        divide_int_print(accelgyro.q.y);
+        divide_int_print(accelgyro.q.z);
+        serial_print_char('\n');
+    }
+}
+
 #define FLASH_SYNC 2765
 
 struct FlashMem{
