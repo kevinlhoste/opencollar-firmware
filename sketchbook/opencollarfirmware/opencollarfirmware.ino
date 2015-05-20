@@ -155,8 +155,8 @@ mode_handler(void)
         delay_time = 1000000/accelgyro.sampling_rate;
         time1 = micros();
         if((time1 - time0) < delay_time) {
-            delayMicroseconds((delay_time - (time1 - time0)));
-            //delay((delay_time- (time1 - time0))/1000);
+            //delayMicroseconds((delay_time - (time1 - time0)));
+            delay((delay_time- (time1 - time0))/1000);
         }
     }
 
@@ -193,8 +193,8 @@ mode_handler(void)
         delay_time = 1000000/accelgyro.sampling_rate;
         time1 = micros();
         if((time1 - time0) < delay_time) {
-            delayMicroseconds((delay_time - (time1 - time0)));
-            //delay((delay_time- (time1 - time0))/1000);
+            //delayMicroseconds((delay_time - (time1 - time0)));
+            delay((delay_time- (time1 - time0))/1000);
         }
     }
 }
