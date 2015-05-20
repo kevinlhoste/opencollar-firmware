@@ -65,4 +65,11 @@ serial_print_char(char value)
   else Serial.print(value);
 }
 
+void
+serial_print_float(float value)
+{
+  if(used_serial) Serial1.print(value);
+  else Serial.print(value);
+}
+
 #endif

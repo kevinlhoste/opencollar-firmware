@@ -73,13 +73,14 @@ print_accelgyro_quaternions(int mode)
 {
     if(mode == CHAR_MODE)
     {
-        Serial.print(accelgyro.q.w);
-        Serial.print("\t");
-        Serial.print(accelgyro.q.x);
-        Serial.print("\t");
-        Serial.print(accelgyro.q.y);
-        Serial.print("\t");
-        Serial.println(accelgyro.q.z);
+        serial_print_float(accelgyro.q.w);
+        serial_print_char(' ');
+        serial_print_float(accelgyro.q.x);
+        serial_print_char(' ');
+        serial_print_float(accelgyro.q.y);
+        serial_print_char(' ');
+        serial_print_float(accelgyro.q.z);
+        serial_print_char('\n');
     }
     else if(mode == BYTE_MODE)
     {
