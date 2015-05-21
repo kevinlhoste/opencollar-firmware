@@ -1,6 +1,8 @@
 #ifndef _FRAME_STRUCT_H
 #define _FRAME_STRUCT_H
 
+#include <Arduino.h>
+
 /**
  * cmd_id
  *
@@ -59,7 +61,7 @@ enum cfg_id {
     /** enable euler at live mode */
     CFG_ID_LIVE_EULER_EN = 'E',
     /** enable gravity vector at live mode */
-    CFG_ID_LIVE_GRAVITY_EN = 'Y'
+    CFG_ID_LIVE_GRAVITY_EN = 'Y',
     /** enable all live modes */
     CFG_ID_LIVE_ALL_EN = 'l'
 };
@@ -125,7 +127,7 @@ struct cmd {
          * @note must not be read or written when the id field is not CFG_SET */
         struct cfg;
     } sub;
-}
+};
 
 /**
  * cfg
@@ -244,7 +246,7 @@ struct sensor_euler {
         psi,
         theta,
         phi;
-}
+};
 
 /**
  * sensor_gravity
