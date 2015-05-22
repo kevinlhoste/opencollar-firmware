@@ -377,4 +377,6 @@ int MvFrameHandler::exec_com_cmd(struct frame *frame)
         (*this->com_list[frame->com]).set_mode(MVCOM_BINARY);
     else
         (*this->com_list[frame->com]).set_mode(MVCOM_ASCII);
+
+    return 0;
 }
