@@ -84,14 +84,23 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
         if (i == read_size)
             return ERR_BAD_FRAME;
 
-        cmd->sub.cfg.id = read_buffer[i];
+        cmd->sub.cfg.id = read_buffer[i++];
 
         i = this->ignore_spaces(read_buffer, read_size, i);
         if (i == read_size)
             return ERR_BAD_FRAME;
 
-        // TODO: read a number here
-        cmd->sub.cfg.value = read_buffer[i];
+        // NOTE: this is not that good, but I am assuming that size of the buffer
+        // will always be bigger then the buffer size and if it is exactly equal its
+        // little corner case bug that will almost never happen
+        if(read_size < BUFFER_SIZE)
+            read_buffer[read_size] = '\0';
+        else
+            return ERR_BAD_FRAME;
+
+        // TODO: return error if not a number
+        String tmp = String(&read_buffer[i]);
+        cmd->sub.cfg.value = tmp.toInt();
     }
 
     return SUCCESS_FRAME_READ;
