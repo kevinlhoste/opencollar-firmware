@@ -350,7 +350,31 @@ int MvFrameHandler::read_frame(struct frame *frame)
     return SUCCESS_NO_FRAME_WAS_READ;
 }
 
-int MvFrameHandler::exec_com_cmd()
+/**
+ * exec_com_cmd
+ *
+ * @brief Execute a command destinated to a COM port
+ *
+ * @param frame the frame containing the command to be executed
+ *
+ * @return 0 if success or ERR_BAD_PARAM if frame is NULL or the command is not
+ *          a COM port command
+ *
+ * @note If the frame->cmd.id command is a CMD_SWITCH_MODE, this functions
+ *          changes the mode imediatly. If the answer must be send in the
+ *          same mode as the command, this functions must be called
+ *          after sending the answer.
+ */
+int MvFrameHandler::exec_com_cmd(struct frame *frame)
 {
-    // TODO
+    // CMD_SWITCH_MODE is (for now) the only command that this
+    // function executes. In the future we can think of other commands
+    // as changing the com baudrate for example.
+    if(!frame || frame->cmd.id != CMD_SWITCH_MODE)
+        return ERR_BAD_PARAM;
+
+    if((*this->com_list[frame->com]).get_mode() == MVCOM_ASCII)
+        (*this->com_list[frame->com]).set_mode(MVCOM_BINARY);
+    else
+        (*this->com_list[frame->com]).set_mode(MVCOM_ASCII);
 }

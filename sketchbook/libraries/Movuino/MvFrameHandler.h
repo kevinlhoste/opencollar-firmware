@@ -46,8 +46,7 @@ class MvFrameHandler {
 
         int read_frame(struct frame *frame);
 
-        // TODO: define this exec function better
-        int exec_com_cmd();
+        int exec_com_cmd(struct frame *frame);
 
     private:
         // ----------- variables --------------------------
