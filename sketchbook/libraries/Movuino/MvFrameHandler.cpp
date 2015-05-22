@@ -80,6 +80,9 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
     // Read the others parameters
     if(cmd->id == CMD_CONFIG_SET)
     {
+        String intStr = "";
+        int number;
+
         i = this->ignore_spaces(read_buffer, read_size, i);
         if (i == read_size)
             return ERR_BAD_FRAME;
@@ -90,17 +93,23 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
         if (i == read_size)
             return ERR_BAD_FRAME;
 
-        // NOTE: this is not that good, but I am assuming that size of the buffer
-        // will always be bigger then the buffer size and if it is exactly equal its
-        // little corner case bug that will almost never happen
-        if(read_size < BUFFER_SIZE)
-            read_buffer[read_size] = '\0';
-        else
+        // Check if we have at least one digit
+        // NOTE: the minus sign is being considered a digit, if there
+        // is no other digit after the minus sign it is interpreted as zero
+        if(!isDigit((char)read_buffer[i]) && (char)read_buffer[i] !='-')
             return ERR_BAD_FRAME;
 
-        // TODO: return error if not a number
-        String tmp = String(&read_buffer[i]);
-        cmd->sub.cfg.value = tmp.toInt();
+        // Read all the other digits into intStr
+        do {
+            intStr += (char)read_buffer[i++];
+        } while(i < read_size && isDigit(read_buffer[i]));
+
+        // Check number boundaries to fit in the cfg.value field
+        number = intStr.toInt();
+        if (!CFG_VALUE_VALID_BOUNDARIES(number))
+            return ERR_BAD_FRAME;
+
+        cmd->sub.cfg.value = number;
     }
 
     return SUCCESS_FRAME_READ;

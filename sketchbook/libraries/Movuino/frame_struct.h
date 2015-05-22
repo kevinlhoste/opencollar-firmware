@@ -127,8 +127,10 @@ struct cfg {
      * when id == CFG_ID_SAMPLING_RATE value is the the exact value in the
      *            variable in Hz
      * when id == CFG_ID_LIVE_[*] value is taken from enum cfg_live */
-    int8_t value;
+    // NOTE: If you change the type of this variable, the macro CFG_VALUE_VALID_BOUNDARIES must be changed
+    uint8_t value;
 };
+#define CFG_VALUE_VALID_BOUNDARIES(n) (n >= 0 && n <= 255)
 
 /**
  * cmd
