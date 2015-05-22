@@ -15,4 +15,19 @@
  */
 #define MAX_COM_PORTS 2
 
+/**
+ * FRAME_ASCII_PREFIX
+ *
+ * The frame identifier printed in all answers in ascii mode
+ */
+#define FRAME_ASCII_PREFIX "F:%c "
+
+/**
+ * FLOAT_BUFFER_SIZE
+ *
+ * The max buffer size used to transform a float into a string
+ */
+#define FLOAT_BUFFER_SIZE 15
+
+
 #endif /* _DEFINITIONS_H */
