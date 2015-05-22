@@ -114,22 +114,6 @@ enum cfg_gyro_sens {
 };
 
 /**
- * cmd
- *
- * Describre the received command frame
- */
-struct cmd {
-    /** value from enum cmd_id that describes the command type */
-    uint8_t id;
-    /** store the additional data from the command */
-    union {
-        /** data from the configuration command
-         * @note must not be read or written when the id field is not CFG_SET */
-        struct cfg;
-    } sub;
-};
-
-/**
  * cfg
  *
  * Describe the configuration command and answer
@@ -143,8 +127,25 @@ struct cfg {
      * when id == CFG_ID_SAMPLING_RATE value is the the exact value in the
      *            variable in Hz
      * when id == CFG_ID_LIVE_[*] value is taken from enum cfg_live */
-    uint8_t value;
+    int8_t value;
 };
+
+/**
+ * cmd
+ *
+ * Describre the received command frame
+ */
+struct cmd {
+    /** value from enum cmd_id that describes the command type */
+    uint8_t id;
+    /** store the additional data from the command */
+    union {
+        /** data from the configuration command
+         * @note must not be read or written when the id field is not CFG_SET */
+        struct cfg cfg;
+    } sub;
+};
+
 
 /**
  * answer_id
@@ -258,8 +259,8 @@ struct sensor_gravity {
     float
     // TODO: check how to serialize this
         yaw,
-        roll,
-        pitch;
+        pitch,
+        roll;
 };
 
 /**
@@ -286,10 +287,10 @@ struct answer {
 
     uint8_t id;
     union {
-        uint8_t nack_value;
+        int8_t nack_value;
         uint8_t version[3];
-        struct cfg;
-        struct sensor_data;
+        struct cfg cfg;
+        struct sensor_data sensor_data;
     } sub;
 };
 
