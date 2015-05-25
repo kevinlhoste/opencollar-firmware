@@ -15,6 +15,7 @@
 #define LIVE_SERIAL_FRAME 'l'
 #define LIVE_QUAT_MODE_FRAME 'U'
 #define LIVE_SERIAL_QUAT_FRAME 'u'
+#define VIBRATION_FRAME 'v'
 #define INFORMATION_FRAME 'i'
 #define PING_FRAME 'A'
 #define WRITE_MODE_FRAME 'w'
@@ -32,6 +33,8 @@
 
 #define FRAME_BUFFER_SIZE 32
 char frame[FRAME_BUFFER_SIZE];
+
+#define MOTOR_PIN 11
 
 void sf_setup(void)
 {
@@ -53,6 +56,12 @@ char sf_getFrame(void)
     {
         case ' ':
             return NO_FRAME;
+            break;
+        case VIBRATION_FRAME:
+            serial_println_str("Groovy !");
+            digitalWrite(MOTOR_PIN,1);
+            delay(200);
+            digitalWrite(MOTOR_PIN,0);
             break;
         case ACCEL_RANGE_FRAME:
         case GYRO_RANGE_FRAME:
