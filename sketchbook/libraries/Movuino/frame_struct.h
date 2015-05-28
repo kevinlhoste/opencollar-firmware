@@ -175,19 +175,20 @@ enum answer_id {
  * ans_nack
  *
  * Identifier of the nack reason
+ * @note This value is always a negative number
  * @see struct answer
  */
 enum ans_nack {
     /** the received frame is in a bad format */
-    ANS_NACK_BAD_FRAME_FORMAT = 0,
+    ANS_NACK_BAD_FRAME_FORMAT = -1,
     /** the record memory is empty */
-    ANS_NACK_EMPTY_MEMORY = 1,
+    ANS_NACK_EMPTY_MEMORY = -2,
     /** the record memory is full */
-    ANS_NACK_MEMORY_FULL = 2,
+    ANS_NACK_MEMORY_FULL = -3,
     /** the received frame came with an unknown command */
-    ANS_NACK_UNKNOWN_CMD = 3,
+    ANS_NACK_UNKNOWN_CMD = -4,
     /** the configuration command came with an unknown configuration value */
-    ANS_NACK_UNKNOWN_CFG = 4
+    ANS_NACK_UNKNOWN_CFG = -5
 };
 
 /**
