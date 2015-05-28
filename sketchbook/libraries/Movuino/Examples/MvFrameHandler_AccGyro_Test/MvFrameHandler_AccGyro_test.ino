@@ -36,6 +36,7 @@ class DummyMvCom : public MvCom
             return 0;
         }
 
+        // TODO: I think this function can fail if the obj was compiled just for one of the modes
         void set_mode(enum mvCom_mode mode)
         {
             Serial.print("MvCom set_mode\n");
@@ -43,12 +44,19 @@ class DummyMvCom : public MvCom
 
         enum mvCom_mode get_mode(void)
         {
-            Serial.print("MvCom get_mode\n");
+            //Serial.print("MvCom get_mode\n");
             return MVCOM_ASCII;
         }
 };
 
 // -------------------------------------------------
+
+struct live_ctl
+{
+    int en;
+    unsigned long period;
+    unsigned long time_stamp;
+} g_live_ctl;
 
 MvCom *g_com;
 MvFrameHandler *g_fhandler;
@@ -58,6 +66,10 @@ struct frame g_frame;
 
 void setup()
 {
+    g_live_ctl.en = 0;
+    g_live_ctl.time_stamp = 0;
+    g_live_ctl.period = 500000; // in micro seconds
+
     Serial.begin(38400);
 
     g_com = new DummyMvCom;
@@ -87,6 +99,20 @@ void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans_err)
     }
 }
 
+bool check_live_time(unsigned long time_stamp, unsigned long period)
+{
+    // TODO: in the complete app, we need to check the overflow
+    if(micros() >= time_stamp + period)
+        return true;
+
+    return false;
+}
+
+void set_live_sampling_rate(unsigned int hz)
+{
+    g_live_ctl.period = 1000000/hz;
+}
+
 void loop()
 {
     int ans_err = ANS_NACK_UNKNOWN_CMD;
@@ -97,25 +123,50 @@ void loop()
         switch(g_frame.cmd.id)
         {
             case CMD_PING:
+                Serial.print("Mv Live en:");
+                Serial.println(g_live_ctl.en);
+                Serial.print("Mv Live period:");
+                Serial.println(g_live_ctl.period);
+                Serial.print("Mv Live ts:");
+                Serial.println(g_live_ctl.time_stamp);
+                Serial.print("Mv Time now:");
+                Serial.println(micros());
+
                 send_ack_nack(&g_frame, g_fhandler, 0);
                 break;
 
             case CMD_LIVE_START:
-                //ans_err = g_accgyro.live_start();
+                //ans_err = g_accgyro.open();
+                if (!ans_err) g_live_ctl.en = true;
+                g_live_ctl.en = true;
                 send_ack_nack(&g_frame, g_fhandler, ans_err);
                 break;
 
             case CMD_LIVE_STOP:
-                //ans_err = g_accgyro.live_stop();
+                //ans_err = g_accgyro.close();
+                if (!ans_err) g_live_ctl.en = false;
+                g_live_ctl.en = false;
                 send_ack_nack(&g_frame, g_fhandler, ans_err);
                 break;
 
             case CMD_CONFIG_SET:
-                switch(g_frame.cmd.sub.cfg.value)
+                switch(g_frame.cmd.sub.cfg.id)
                 {
+                    // TODO: in the real app, write the config into flash and change
                     case CFG_ID_ACC_SENS:
+                        //ans_err = g_accgyro.set_acc_sens(g_frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_frame, g_fhandler, ans_err);
+                        break;
                     case CFG_ID_GYRO_SENS:
+                        //ans_err = g_accgyro.set_gyro_sens(g_frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_frame, g_fhandler, ans_err);
+                        break;
+
                     case CFG_ID_SAMPING_RATE:
+                        set_live_sampling_rate(g_frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_frame, g_fhandler, 0);
+                        break;
+
                     case CFG_ID_LIVE_ACC_RAW_EN:
                     case CFG_ID_LIVE_GYRO_RAW_EN:
                     case CFG_ID_LIVE_QUATERNION_EN:
@@ -132,22 +183,17 @@ void loop()
                 // This is a command to the frame handler
                 ans_err = g_fhandler->exec_com_cmd(&g_frame);
                 send_ack_nack(&g_frame, g_fhandler, ans_err);
+                // TODO: write the new mode into the flash
                 break;
 
+            // TODO: in the real app support flash instructions
             case CMD_REC_START:
-                // TODO
             case CMD_REC_STOP:
-                // TODO
             case CMD_REC_PLAY:
-                // TODO
             case CMD_REC_CLEAR:
-                // TODO
             case CMD_HELP:
-                // TODO
             case CMD_VERSION_GET:
-                // TODO
             case CMD_CONFIG_GET:
-                // TODO
             default:
                 send_ack_nack(&g_frame, g_fhandler, ANS_NACK_UNKNOWN_CMD);
                 break;
@@ -162,5 +208,57 @@ void loop()
         // This should never happen
         Serial.print("PANIC!!! READ ERROR!");
         while(1);
+    }
+
+    // Deal with live
+    if (g_live_ctl.en)
+    {
+        // Check if its time to print the next data
+        if(check_live_time(g_live_ctl.time_stamp, g_live_ctl.period))
+        {
+            unsigned long old_ts = g_live_ctl.time_stamp;
+            // Set new time_stamp
+            g_live_ctl.time_stamp = micros();
+
+            Serial.print("Mv interval:");
+            Serial.println(g_live_ctl.time_stamp - old_ts);
+
+            // Prepare values
+            //g_accgyro.read();
+
+            // Prepare live frames
+            g_frame.answer.id = ANS_ID_LIVE;
+
+            // TODO: in the real app, we should verify if each
+            // one of them are enabled
+
+            // Send raw acc data
+            g_frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
+            //g_frame.sub.sensor_data.data.raw = g_accgyro.get_raw_acc();
+            g_fhandler->write_frame(&g_frame);
+
+            // Send raw gyro data
+            g_frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
+            //g_frame.sub.sensor_data.data.raw = g_accgyro.get_raw_gyro();
+            g_fhandler->write_frame(&g_frame);
+
+            // Send quat data
+            g_frame.answer.sub.sensor_data.type = SENS_QUAT;
+            //g_frame.sub.sensor_data.data.quat = g_accgyro.get_quat();
+            g_fhandler->write_frame(&g_frame);
+
+            // Send euler data
+            g_frame.answer.sub.sensor_data.type = SENS_EULER;
+            //g_frame.sub.sensor_data.data.quat = g_accgyro.get_euler();
+            g_fhandler->write_frame(&g_frame);
+
+            // Send gravity data
+            g_frame.answer.sub.sensor_data.type = SENS_GRAVITY;
+            //g_frame.sub.sensor_data.data.gravity = g_accgyro.get_gravity();
+            g_fhandler->write_frame(&g_frame);
+
+            //Serial.print("Mv etime:");
+            //Serial.println(micros() - g_live_ctl.time_stamp);
+        }
     }
 }
