@@ -295,7 +295,7 @@ int MvFrameHandler::build_answer_frame(char *buffer, struct answer *ans,
  *
  * @param frame The frame containing information of what must be send
  *
- * @return  0 if success
+ * @return  The size of the frame if success
  *          ERR_BAD_FRAME if an error has occured while parsing the answer structure
  *          ERR_BAD_PARAM if struct frame *frame is a NULL pointer
  */
