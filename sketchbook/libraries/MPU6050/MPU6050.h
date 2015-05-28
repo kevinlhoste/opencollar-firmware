@@ -51,6 +51,22 @@ THE SOFTWARE.
 #define PSTR(STR) STR
 #endif
 
+//Magnetometer Registers
+#define MPU9150_RA_MAG_ADDRESS		0x0C
+#define MPU9150_RA_MAG_WAI		0x00
+#define MPU9150_RA_MAG_ST1		0x02
+
+#define MPU9150_RA_MAG_XOUT_L		0x03
+#define MPU9150_RA_MAG_XOUT_H		0x04
+#define MPU9150_RA_MAG_YOUT_L		0x05
+#define MPU9150_RA_MAG_YOUT_H		0x06
+#define MPU9150_RA_MAG_ZOUT_L		0x07
+#define MPU9150_RA_MAG_ZOUT_H		0x08
+
+#define MPU9150_RA_MAG_CNTL		0x0A
+
+
+
 
 #define MPU6050_ADDRESS_AD0_LOW     0x68 // address pin low (GND), default for InvenSense evaluation board
 #define MPU6050_ADDRESS_AD0_HIGH    0x69 // address pin high (VCC)
@@ -584,6 +600,11 @@ class MPU6050 {
         bool getIntFIFOBufferOverflowStatus();
         bool getIntI2CMasterStatus();
         bool getIntDataReadyStatus();
+
+
+	bool checkMag(void);
+
+	void getMag(int16_t *ax, int16_t *ay, int16_t *az);
 
         // ACCEL_*OUT_* registers
         void getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz);

@@ -51,6 +51,7 @@ MPU6050 accelgyro;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+int16_t mx, my, mz;
 
 
 
@@ -70,6 +71,10 @@ int16_t gx, gy, gz;
 bool blinkState = false;
 
 void setup() {
+  
+  
+   delay(5000);
+  
     // join I2C bus (I2Cdev library doesn't do this automatically)
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
         Wire.begin();
@@ -89,6 +94,19 @@ void setup() {
     // verify connection
     Serial.println("Testing device connections...");
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+   
+    accelgyro.setI2CBypassEnabled(true);
+    delay(100);
+    
+    
+    Serial.println("Testing compass connections...");
+    Serial.println(accelgyro.checkMag() ? "Yep" : "Nope");
+        
+
+    
+    
+    
+    
 
     // use the code below to change accel/gyro offset values
     /*
@@ -115,15 +133,32 @@ void setup() {
 
     // configure Arduino LED for
     pinMode(LED_PIN, OUTPUT);
+
+/*    
+    int i;
+    for (i=0; i< 0x12; i++) {
+      uint8_t tmp;
+      
+      I2Cdev::readByte(MPU9150_RA_MAG_ADDRESS, 2, &tmp);
+      
+      Serial.print('0x'); Serial.print(i, HEX); Serial.print(": ");
+      Serial.print('0x'); Serial.print(tmp); Serial.print('\n');
+    }
+ */   
 }
 
 void loop() {
     // read raw accel/gyro measurements from device
-    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    //accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
     // these methods (and a few others) are also available
     //accelgyro.getAcceleration(&ax, &ay, &az);
     //accelgyro.getRotation(&gx, &gy, &gz);
+    
+    //accelgyro.getMag(&mx, &my, &mz);
+    
+ 
 
     #ifdef OUTPUT_READABLE_ACCELGYRO
         // display tab-separated accel/gyro x/y/z values
@@ -133,7 +168,11 @@ void loop() {
         Serial.print(az); Serial.print("\t");
         Serial.print(gx); Serial.print("\t");
         Serial.print(gy); Serial.print("\t");
-        Serial.println(gz);
+        Serial.print(gz); Serial.print("\t");
+        
+        Serial.print(mx); Serial.print("\t");
+        Serial.print(my); Serial.print("\t");
+        Serial.print(mz); Serial.print("\n");
     #endif
 
     #ifdef OUTPUT_BINARY_ACCELGYRO
@@ -148,4 +187,6 @@ void loop() {
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
+    
+    delay(500);
 }
