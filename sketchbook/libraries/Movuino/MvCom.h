@@ -48,7 +48,7 @@ class MvCom {
          * @brief Change the current communication API mode
          * @param mode The new mode
          */
-        virtual void set_mode(enum mvCom_mode mode) = 0;
+        virtual int set_mode(enum mvCom_mode mode) = 0;
 
         /**
          * get_mode
