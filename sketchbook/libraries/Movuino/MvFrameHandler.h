@@ -75,6 +75,7 @@ class MvFrameHandler {
         int build_answer_frame_ascii_mode(char *buffer, struct answer *ans);
         int build_answer_frame_bin_mode(char *buffer, struct answer *ans);
         int ignore_spaces(char *buffer, int size, int start);
+        const char * err_description(int nack_value);
 
 };
 

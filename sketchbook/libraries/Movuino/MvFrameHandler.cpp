@@ -146,6 +146,34 @@ int MvFrameHandler::parse_cmd_frame(char *read_buffer, int read_size,
 }
 
 /**
+ * err_description
+ *
+ * @brief Get the string with the description of the error
+ *
+ * @param nack_value the error id from enum ans_nack
+ *
+ * @return the pointer to the string with the description
+ */
+const char * MvFrameHandler::err_description(int nack_value)
+{
+    switch(nack_value)
+    {
+        case ANS_NACK_BAD_FRAME_FORMAT:
+            return "bad frame format";
+        case ANS_NACK_EMPTY_MEMORY:
+            return "memory is empty";
+        case ANS_NACK_MEMORY_FULL:
+            return "memory is full";
+        case ANS_NACK_UNKNOWN_CMD:
+            return "unknown command";
+        case ANS_NACK_UNKNOWN_CFG:
+            return "unknown configuration";
+        default:
+            return "unknown error";
+    }
+}
+
+/**
  * build_answer_frame_ascii_mode
  *
  * @brief The same as build_answer_frame but specific to the mode ascii
@@ -163,7 +191,8 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
         case ANS_ID_NACK:
             // TODO: interpret nack values and print the not just the error number
             // but the error name in ascii too
-            sprintf(buffer, FRAME_ASCII_PREFIX "ERR:%d\n", ans->id, ans->sub.nack_value);
+            sprintf(buffer, FRAME_ASCII_PREFIX "ERR:%d DESC:%s\n", ans->id,
+                    ans->sub.nack_value, this->err_description(ans->sub.nack_value));
             goto ret;
 
         case ANS_ID_VERSION:
