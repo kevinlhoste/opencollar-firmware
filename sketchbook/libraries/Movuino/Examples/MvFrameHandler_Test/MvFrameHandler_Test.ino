@@ -1,3 +1,7 @@
+#include "I2Cdev.h"
+#include "MPU6050.h"
+#include "Wire.h"
+
 #include "MvFrameHandler.h"
 #include "MvCom.h"
 
@@ -28,9 +32,10 @@ class DummyMvCom : public MvCom
             return 0;
         }
 
-        void set_mode(enum mvCom_mode mode)
+        int set_mode(enum mvCom_mode mode)
         {
             Serial.print("MvCom set_mode\n");
+            return ANS_NACK_UNKNOWN_CMD;
         }
 
         enum mvCom_mode get_mode(void)

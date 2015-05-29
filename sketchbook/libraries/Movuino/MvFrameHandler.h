@@ -7,17 +7,8 @@
 
 // Note: most part of the documentation is written in the cpp file
 
-/**
- * return_msg
- *
- * @brief the possible returns from the public function
- */
-enum return_msg {
-    SUCCESS_NO_FRAME_WAS_READ = 0,
-    SUCCESS_FRAME_READ = 1,
-    ERR_BAD_FRAME = -1,
-    ERR_BAD_PARAM = -2,
-};
+#define SUCCESS_NO_FRAME_WAS_READ 0
+#define SUCCESS_FRAME_READ 1
 
 /**
  * struct frame

@@ -189,8 +189,8 @@ enum ans_nack {
     ANS_NACK_UNKNOWN_CMD = -4,
     /** the configuration command came with an unknown configuration value */
     ANS_NACK_UNKNOWN_CFG = -5,
-    /** generic error */
-    ANS_NACK_UNKNOWN_ERR = -6
+    /** internal error, this should never happen */
+    ANS_NACK_INTERNAL_ERR = -6
 };
 
 /**

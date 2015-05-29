@@ -72,7 +72,7 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
 
     i = this->ignore_spaces(read_buffer, read_size, 0);
     if (i == read_size)
-        return ERR_BAD_FRAME;
+        return ANS_NACK_BAD_FRAME_FORMAT;
 
     // Read the command id
     cmd->id = read_buffer[i++];
@@ -85,19 +85,19 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
 
         i = this->ignore_spaces(read_buffer, read_size, i);
         if (i == read_size)
-            return ERR_BAD_FRAME;
+            return ANS_NACK_BAD_FRAME_FORMAT;
 
         cmd->sub.cfg.id = read_buffer[i++];
 
         i = this->ignore_spaces(read_buffer, read_size, i);
         if (i == read_size)
-            return ERR_BAD_FRAME;
+            return ANS_NACK_BAD_FRAME_FORMAT;
 
         // Check if we have at least one digit
         // NOTE: the minus sign is being considered a digit, if there
         // is no other digit after the minus sign it is interpreted as zero
         if(!isDigit((char)read_buffer[i]) && (char)read_buffer[i] !='-')
-            return ERR_BAD_FRAME;
+            return ANS_NACK_BAD_FRAME_FORMAT;
 
         // Read all the other digits into intStr
         do {
@@ -107,7 +107,7 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
         // Check number boundaries to fit in the cfg.value field
         number = intStr.toInt();
         if (!CFG_VALUE_VALID_BOUNDARIES(number))
-            return ERR_BAD_FRAME;
+            return ANS_NACK_BAD_FRAME_FORMAT;
 
         cmd->sub.cfg.value = number;
     }
@@ -127,14 +127,14 @@ int MvFrameHandler::parse_cmd_frame_ascii_mode(char *read_buffer, int read_size,
  * @param mode          the mode to interpret the buffer
  *
  * @return  SUCCESS_FRAME_READ if a frame was read and successfuly parsed
- *          ERR_BAD_FRAME if a frame could not be parsed
- *          ERR_BAD_PARAM if read_buffer is a null pointer or read_size is zero
+ *          ANS_NACK_BAD_FRAME_FORMAT if a frame could not be parsed
+ *          ANS_NACK_INTERNAL_ERR if read_buffer is a null pointer or read_size is zero
  */
 int MvFrameHandler::parse_cmd_frame(char *read_buffer, int read_size,
                                     struct cmd *cmd, enum mvCom_mode mode)
 {
     if(!read_buffer || !read_size)
-        return ERR_BAD_PARAM;
+        return ANS_NACK_INTERNAL_ERR;
 
     switch(mode)
     {
@@ -168,6 +168,8 @@ const char * MvFrameHandler::err_description(int nack_value)
             return "unknown command";
         case ANS_NACK_UNKNOWN_CFG:
             return "unknown configuration";
+        case ANS_NACK_INTERNAL_ERR:
+            return "internal error";
         default:
             return "unknown error";
     }
@@ -305,7 +307,7 @@ int MvFrameHandler::build_answer_frame(char *buffer, struct answer *ans,
                                         enum mvCom_mode mode)
 {
     if(!buffer || !ans)
-        return ERR_BAD_PARAM;
+        return ANS_NACK_INTERNAL_ERR;
 
     switch(mode)
     {
@@ -325,12 +327,12 @@ int MvFrameHandler::build_answer_frame(char *buffer, struct answer *ans,
  * @param frame The frame containing information of what must be send
  *
  * @return  The size of the frame if success
- *          ERR_BAD_FRAME if an error has occured while parsing the answer structure
- *          ERR_BAD_PARAM if struct frame *frame is a NULL pointer
+ *          ANS_NACK_BAD_FRAME_FORMAT if an error has occured while parsing the answer structure
+ *          ANS_NACK_INTERNAL_ERR if struct frame *frame is a NULL pointer
  */
 int MvFrameHandler::write_frame(struct frame *frame)
 {
-    if(!frame) return ERR_BAD_PARAM;
+    if(!frame) return ANS_NACK_INTERNAL_ERR;
 
     enum mvCom_mode mode = (*this->com_list[frame->com]).get_mode();
 
@@ -353,12 +355,12 @@ int MvFrameHandler::write_frame(struct frame *frame)
  *
  * @return  SUCCESS_FRAME_READ if a frame was read and successfuly parsed
  *          SUCCESS_NO_FRAME_WAS_READ if no frame was read
- *          ERR_BAD_FRAME if a frame was read but it could not be parsed
- *          ERR_BAD_PARAM if struct frame *frame is a NULL pointer
+ *          ANS_NACK_BAD_FRAME_FORMAT if a frame was read but it could not be parsed
+ *          ANS_NACK_INTERNAL_ERR if struct frame *frame is a NULL pointer
  */
 int MvFrameHandler::read_frame(struct frame *frame)
 {
-    if(!frame) return ERR_BAD_PARAM;
+    if(!frame) return ANS_NACK_INTERNAL_ERR;
 
     int read_size = 0;
 
@@ -386,7 +388,8 @@ int MvFrameHandler::read_frame(struct frame *frame)
  *
  * @param frame the frame containing the command to be executed
  *
- * @return 0 if success or ERR_BAD_PARAM if frame is NULL or the command is not
+ * @return  0 if success
+ *          ANS_NACK_INTERNAL_ERR if frame is NULL or the command is not
  *          a COM port command
  *
  * @note If the frame->cmd.id command is a CMD_SWITCH_MODE, this functions
@@ -400,12 +403,12 @@ int MvFrameHandler::exec_com_cmd(struct frame *frame)
     // function executes. In the future we can think of other commands
     // as changing the com baudrate for example.
     if(!frame || frame->cmd.id != CMD_SWITCH_MODE)
-        return ERR_BAD_PARAM;
+        return ANS_NACK_INTERNAL_ERR;
 
     if((*this->com_list[frame->com]).get_mode() == MVCOM_ASCII)
-        (*this->com_list[frame->com]).set_mode(MVCOM_BINARY);
+        return (*this->com_list[frame->com]).set_mode(MVCOM_BINARY);
     else
-        (*this->com_list[frame->com]).set_mode(MVCOM_ASCII);
+        return (*this->com_list[frame->com]).set_mode(MVCOM_ASCII);
 
     return 0;
 }

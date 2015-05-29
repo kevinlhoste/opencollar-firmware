@@ -47,6 +47,8 @@ class MvCom {
          *
          * @brief Change the current communication API mode
          * @param mode The new mode
+         * @return 0 if success
+         *         ANS_NACK_UNKNOWN_CMD if switch mode is not supported
          */
         virtual int set_mode(enum mvCom_mode mode) = 0;
 

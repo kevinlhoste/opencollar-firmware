@@ -41,10 +41,11 @@ class DummyMvCom : public MvCom
             return 0;
         }
 
-        // TODO: I think this function can fail if the obj was compiled just for one of the modes
-        void set_mode(enum mvCom_mode mode)
+        int set_mode(enum mvCom_mode mode)
         {
             Serial.print("MvCom set_mode\n");
+            // We don't support changing the mode
+            return ANS_NACK_UNKNOWN_CMD;
         }
 
         enum mvCom_mode get_mode(void)
@@ -202,11 +203,11 @@ void loop()
                 break;
         }
     }
-    else if(ERR_BAD_FRAME == read_err)
+    else if(ANS_NACK_BAD_FRAME_FORMAT == read_err)
     {
-        send_ack_nack(&g_frame, g_fhandler, ANS_NACK_BAD_FRAME_FORMAT);
+        send_ack_nack(&g_frame, g_fhandler, read_err);
     }
-    else if(ERR_BAD_PARAM == read_err)
+    else if(ANS_NACK_INTERNAL_ERR == read_err)
     {
         // This should never happen
         Serial.print("PANIC!!! READ ERROR!");
