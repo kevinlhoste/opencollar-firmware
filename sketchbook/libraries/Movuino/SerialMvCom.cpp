@@ -1,12 +1,15 @@
 #include "SerialMvCom.h"
 
+int SerialMvCom::Smc_list_size = 0;
+SerialMvCom* SerialMvCom::Smc_list[SMC_SERIAL_OBJECTS];
+
 /**
  * _update_byte
  *
  * @brief private function called when there is data at the serial
  * port and the object is in MVCOM_BINARY mode
  */
-static void SerialMvCom::_update_byte(void)
+void SerialMvCom::_update_byte(void)
 {
     switch(this->state)
     {
@@ -52,7 +55,7 @@ static void SerialMvCom::_update_byte(void)
                 uint16_t crc;
                 uint16_t *crc_p;
                 crc_p = (uint16_t*)&(this->buffer[this->frame_size - 3]);
-                crc = mv_crc(0xFFFF,(uint16_t*)this->buffer, this->frame_size -2);
+                crc = mv_crc(0xFFFF,(unsigned char*)this->buffer, this->frame_size -2);
                 if(crc != *crc_p)
                 {
                     this->state = SMC_EMPTY;
@@ -69,7 +72,7 @@ static void SerialMvCom::_update_byte(void)
  * @brief private function called when there is data at the serial
  * port and the object is in MVCOM_ASCII mode
  */
-static void SerialMvCom::_update_ascii(void)
+void SerialMvCom::_update_ascii(void)
 {
     switch(this->state)
     {
@@ -151,6 +154,7 @@ void SerialMvCom::_read_frame_byte(char *frame, int *size)
  */
 int SerialMvCom::read_frame(char *frame, int *size)
 {
+    this->update();
     if(this->state == SMC_READY)
     {
         if(this->mode == MVCOM_ASCII)
@@ -162,7 +166,10 @@ int SerialMvCom::read_frame(char *frame, int *size)
             this->_read_frame_byte(frame,size);
         }
         this->state = SMC_EMPTY;
+        return 0;
     }
+    *size = 0;
+    return -1;
 }
 
 /**
@@ -170,7 +177,7 @@ int SerialMvCom::read_frame(char *frame, int *size)
  *
  * @brief Send a user frame to the serial in MVCOM_ASCII mode
  */
-SerialMcCom::_write_frame_ascii(char *frame, int size)
+int SerialMvCom::_write_frame_ascii(char *frame, int size)
 {
     /* print the sequencer */
     this->serial->write("S:");
@@ -183,6 +190,7 @@ SerialMcCom::_write_frame_ascii(char *frame, int size)
     this->serial->flush();
     /* update the sequencer */
     this->sequencer++;
+    return 0;
 }
 
 /**
@@ -190,14 +198,13 @@ SerialMcCom::_write_frame_ascii(char *frame, int size)
  *
  * @brief Send a user frame to the serial in MVCOM_BINARY mode
  */
-SerialMcCom::_write_frame_ascii(char *frame, int size)
-SerialMcCom::_write_frame_byte(char *frame, int size)
+int SerialMvCom::_write_frame_byte(char *frame, int size)
 {
     uint16_t crc;
 
     /* calculate crc */
     crc = mv_crc(0xFFFF, &this->sequencer, 1);
-    crc = mv_crc(crc, frame, size);
+    crc = mv_crc(crc, (unsigned char*)frame, size);
     /* print the sync bytes */
     this->serial->write(SMC_SYNC_BYTE1);
     this->serial->write(SMC_SYNC_BYTE2);
@@ -212,20 +219,21 @@ SerialMcCom::_write_frame_byte(char *frame, int size)
     this->serial->flush();
     /* update the sequencer */
     this->sequencer++;
+    return 0;
 }
 
 /**
  * @see MvCom::write_frame
  */
-SerialMvCom::write_frame(char *frame, int size)
+int SerialMvCom::write_frame(char *frame, int size)
 {
     if(this->mode == MVCOM_ASCII)
     {
-        this->_write_frame_ascii(frame,size);
+        return this->_write_frame_ascii(frame,size);
     }
     else
     {
-        this->_write_frame_byte(frame,size);
+        return this->_write_frame_byte(frame,size);
     }
 }
 
@@ -234,8 +242,8 @@ SerialMvCom::write_frame(char *frame, int size)
  */
 int SerialMvCom::set_mode(enum mvCom_mode mode)
 {
-    this.mode = mode;
-    this.state = SMC_EMPTY; 
+    this->mode = mode;
+    this->state = SMC_EMPTY; 
     return 0;
 }
 
@@ -252,7 +260,7 @@ enum mvCom_mode SerialMvCom::get_mode(void)
  *
  * @brief initialize a structure to be used as a MvCom with a serial port
  */
-SerialMvCom::SerialMvCom(HardwareSerial *serial, int baudrate)
+SerialMvCom::SerialMvCom(Stream *serial)
 {
     this->serial = serial;
     this->frame_size = 0;
@@ -262,11 +270,11 @@ SerialMvCom::SerialMvCom(HardwareSerial *serial, int baudrate)
     this->sequencer = 0;
 
     /* if there is still space at the list of SerialMvCom, add this port */
-    if(SerialMvCom.Smc_list_size < SMC_SERIAL_OBJECTS)
+    if(SerialMvCom::Smc_list_size < SMC_SERIAL_OBJECTS)
     {
-        SerialMvCom.Smc_list[SerialMvCom.Smc_list_size] = this;
-        SerialMvCom.Smc_list_size++;
-        serial->begin(baudrate);
+        SerialMvCom::Smc_list[SerialMvCom::Smc_list_size] = this;
+        SerialMvCom::Smc_list_size++;
+        this->serial->print("Init\n");
     }
 }
 
@@ -279,10 +287,9 @@ SerialMvCom::SerialMvCom(HardwareSerial *serial, int baudrate)
 void SerialEvent(void)
 {
     int i;
-    for(i = 0; i < SerialMvCom.Smc_list_size; i++)
+    for(i = 0; i < SerialMvCom::Smc_list_size; i++)
     {
-        SerialMvCom.Smc_list[i]->update();
+        SerialMvCom::Smc_list[i]->update();
     }
 }
-
 
