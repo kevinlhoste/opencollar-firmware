@@ -1,6 +1,11 @@
+#include "I2Cdev.h"
+#include "MPU6050.h"
+#include "Wire.h"
+
 #include "MvFrameHandler.h"
 #include "MvCom.h"
-//#include "MvAccGyro.h"
+#include "MvAccGyro.h"
+
 
 class DummyMvCom : public MvCom
 {
@@ -60,7 +65,7 @@ struct live_ctl
 
 MvCom *g_com;
 MvFrameHandler *g_fhandler;
-//MvAccGyro g_accgyro;
+MvAccGyro g_accgyro;
 struct frame g_frame;
 
 
@@ -136,16 +141,14 @@ void loop()
                 break;
 
             case CMD_LIVE_START:
-                //ans_err = g_accgyro.open();
+                ans_err = g_accgyro.open();
                 if (!ans_err) g_live_ctl.en = true;
-                g_live_ctl.en = true;
                 send_ack_nack(&g_frame, g_fhandler, ans_err);
                 break;
 
             case CMD_LIVE_STOP:
-                //ans_err = g_accgyro.close();
+                ans_err = g_accgyro.close();
                 if (!ans_err) g_live_ctl.en = false;
-                g_live_ctl.en = false;
                 send_ack_nack(&g_frame, g_fhandler, ans_err);
                 break;
 
@@ -154,11 +157,11 @@ void loop()
                 {
                     // TODO: in the real app, write the config into flash and change
                     case CFG_ID_ACC_SENS:
-                        //ans_err = g_accgyro.set_acc_sens(g_frame.cmd.sub.cfg.value);
+                        ans_err = g_accgyro.set_acc_sens(g_frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_frame, g_fhandler, ans_err);
                         break;
                     case CFG_ID_GYRO_SENS:
-                        //ans_err = g_accgyro.set_gyro_sens(g_frame.cmd.sub.cfg.value);
+                        ans_err = g_accgyro.set_gyro_sens(g_frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_frame, g_fhandler, ans_err);
                         break;
 
@@ -224,7 +227,7 @@ void loop()
             Serial.println(g_live_ctl.time_stamp - old_ts);
 
             // Prepare values
-            //g_accgyro.read();
+            g_accgyro.read();
 
             // Prepare live frames
             g_frame.answer.id = ANS_ID_LIVE;
@@ -234,27 +237,27 @@ void loop()
 
             // Send raw acc data
             g_frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
-            //g_frame.sub.sensor_data.data.raw = g_accgyro.get_raw_acc();
+            g_frame.answer.sub.sensor_data.data.raw = g_accgyro.get_raw_acc();
             g_fhandler->write_frame(&g_frame);
 
             // Send raw gyro data
             g_frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
-            //g_frame.sub.sensor_data.data.raw = g_accgyro.get_raw_gyro();
+            g_frame.answer.sub.sensor_data.data.raw = g_accgyro.get_raw_gyro();
             g_fhandler->write_frame(&g_frame);
 
             // Send quat data
             g_frame.answer.sub.sensor_data.type = SENS_QUAT;
-            //g_frame.sub.sensor_data.data.quat = g_accgyro.get_quat();
+            g_frame.answer.sub.sensor_data.data.quat = g_accgyro.get_quat();
             g_fhandler->write_frame(&g_frame);
 
             // Send euler data
             g_frame.answer.sub.sensor_data.type = SENS_EULER;
-            //g_frame.sub.sensor_data.data.quat = g_accgyro.get_euler();
+            g_frame.answer.sub.sensor_data.data.euler = g_accgyro.get_euler();
             g_fhandler->write_frame(&g_frame);
 
             // Send gravity data
             g_frame.answer.sub.sensor_data.type = SENS_GRAVITY;
-            //g_frame.sub.sensor_data.data.gravity = g_accgyro.get_gravity();
+            g_frame.answer.sub.sensor_data.data.gravity = g_accgyro.get_gravity();
             g_fhandler->write_frame(&g_frame);
 
             //Serial.print("Mv etime:");
