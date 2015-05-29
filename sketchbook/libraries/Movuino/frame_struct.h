@@ -188,7 +188,9 @@ enum ans_nack {
     /** the received frame came with an unknown command */
     ANS_NACK_UNKNOWN_CMD = -4,
     /** the configuration command came with an unknown configuration value */
-    ANS_NACK_UNKNOWN_CFG = -5
+    ANS_NACK_UNKNOWN_CFG = -5,
+    /** generic error */
+    ANS_NACK_UNKNOWN_ERR = -6
 };
 
 /**
@@ -217,7 +219,7 @@ enum sensor_type {
  * @see struct sensor_data
  */
 struct sensor_3_axes {
-    uint16_t
+    int16_t
         x,
         y,
         z;
