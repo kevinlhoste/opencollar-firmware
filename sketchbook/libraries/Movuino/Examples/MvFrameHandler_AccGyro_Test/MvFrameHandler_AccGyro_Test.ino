@@ -58,30 +58,31 @@ class DummyMvCom : public MvCom
 
 // -------------------------------------------------
 
-struct live_ctl
+struct app_context
 {
-    int en;
-    unsigned long period;
-    unsigned long time_stamp;
-} g_live_ctl;
-
-MvCom *g_com;
-MvFrameHandler *g_fhandler;
-MvAccGyro g_accgyro;
-struct frame g_frame;
-
+    struct live_ctl
+    {
+        int en;
+        unsigned long period;
+        unsigned long time_stamp;
+    } live_ctl;
+    MvCom *com;
+    MvFrameHandler *fhandler;
+    MvAccGyro accgyro;
+    struct frame frame;
+} g_ctx;
 
 void setup()
 {
-    g_live_ctl.en = 0;
-    g_live_ctl.time_stamp = 0;
-    g_live_ctl.period = 500000; // in micro seconds
+    g_ctx.live_ctl.en = 0;
+    g_ctx.live_ctl.time_stamp = 0;
+    g_ctx.live_ctl.period = 500000; // in micro seconds
 
     Serial.begin(38400);
 
-    g_com = new DummyMvCom;
+    g_ctx.com = new DummyMvCom;
 
-    g_fhandler = new MvFrameHandler(&g_com, 1);
+    g_ctx.fhandler = new MvFrameHandler(&g_ctx.com, 1);
 }
 
 void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans_err)
@@ -117,59 +118,59 @@ bool check_live_time(unsigned long time_stamp, unsigned long period)
 
 void set_live_sampling_rate(unsigned int hz)
 {
-    g_live_ctl.period = 1000000/hz;
+    g_ctx.live_ctl.period = 1000000/hz;
 }
 
 void loop()
 {
     int ans_err = ANS_NACK_UNKNOWN_CMD;
-    int read_err = g_fhandler->read_frame(&g_frame);
+    int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
 
     if (SUCCESS_FRAME_READ == read_err)
     {
-        switch(g_frame.cmd.id)
+        switch(g_ctx.frame.cmd.id)
         {
             case CMD_PING:
                 Serial.print("Mv Live en:");
-                Serial.println(g_live_ctl.en);
+                Serial.println(g_ctx.live_ctl.en);
                 Serial.print("Mv Live period:");
-                Serial.println(g_live_ctl.period);
+                Serial.println(g_ctx.live_ctl.period);
                 Serial.print("Mv Live ts:");
-                Serial.println(g_live_ctl.time_stamp);
+                Serial.println(g_ctx.live_ctl.time_stamp);
                 Serial.print("Mv Time now:");
                 Serial.println(micros());
 
-                send_ack_nack(&g_frame, g_fhandler, 0);
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 break;
 
             case CMD_LIVE_START:
-                ans_err = g_accgyro.open();
-                if (!ans_err) g_live_ctl.en = true;
-                send_ack_nack(&g_frame, g_fhandler, ans_err);
+                ans_err = g_ctx.accgyro.open();
+                if (!ans_err) g_ctx.live_ctl.en = true;
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                 break;
 
             case CMD_LIVE_STOP:
-                ans_err = g_accgyro.close();
-                if (!ans_err) g_live_ctl.en = false;
-                send_ack_nack(&g_frame, g_fhandler, ans_err);
+                ans_err = g_ctx.accgyro.close();
+                if (!ans_err) g_ctx.live_ctl.en = false;
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                 break;
 
             case CMD_CONFIG_SET:
-                switch(g_frame.cmd.sub.cfg.id)
+                switch(g_ctx.frame.cmd.sub.cfg.id)
                 {
                     // TODO: in the real app, write the config into flash and change
                     case CFG_ID_ACC_SENS:
-                        ans_err = g_accgyro.set_acc_sens(g_frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_frame, g_fhandler, ans_err);
+                        ans_err = g_ctx.accgyro.set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                         break;
                     case CFG_ID_GYRO_SENS:
-                        ans_err = g_accgyro.set_gyro_sens(g_frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_frame, g_fhandler, ans_err);
+                        ans_err = g_ctx.accgyro.set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                         break;
 
                     case CFG_ID_SAMPING_RATE:
-                        set_live_sampling_rate(g_frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_frame, g_fhandler, 0);
+                        set_live_sampling_rate(g_ctx.frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                         break;
 
                     case CFG_ID_LIVE_ACC_RAW_EN:
@@ -179,15 +180,15 @@ void loop()
                     case CFG_ID_LIVE_GRAVITY_EN:
                     case CFG_ID_LIVE_ALL_EN:
                     default:
-                        send_ack_nack(&g_frame, g_fhandler, ANS_NACK_UNKNOWN_CFG);
+                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CFG);
                         break;
                 }
                 break;
 
             case CMD_SWITCH_MODE:
                 // This is a command to the frame handler
-                ans_err = g_fhandler->exec_com_cmd(&g_frame);
-                send_ack_nack(&g_frame, g_fhandler, ans_err);
+                ans_err = g_ctx.fhandler->exec_com_cmd(&g_ctx.frame);
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                 // TODO: write the new mode into the flash
                 break;
 
@@ -200,13 +201,13 @@ void loop()
             case CMD_VERSION_GET:
             case CMD_CONFIG_GET:
             default:
-                send_ack_nack(&g_frame, g_fhandler, ANS_NACK_UNKNOWN_CMD);
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CMD);
                 break;
         }
     }
     else if(ANS_NACK_BAD_FRAME_FORMAT == read_err)
     {
-        send_ack_nack(&g_frame, g_fhandler, read_err);
+        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, read_err);
     }
     else if(ANS_NACK_INTERNAL_ERR == read_err)
     {
@@ -216,54 +217,54 @@ void loop()
     }
 
     // Deal with live
-    if (g_live_ctl.en)
+    if (g_ctx.live_ctl.en)
     {
         // Check if its time to print the next data
-        if(check_live_time(g_live_ctl.time_stamp, g_live_ctl.period))
+        if(check_live_time(g_ctx.live_ctl.time_stamp, g_ctx.live_ctl.period))
         {
-            unsigned long old_ts = g_live_ctl.time_stamp;
+            unsigned long old_ts = g_ctx.live_ctl.time_stamp;
             // Set new time_stamp
-            g_live_ctl.time_stamp = micros();
+            g_ctx.live_ctl.time_stamp = micros();
 
             Serial.print("Mv interval:");
-            Serial.println(g_live_ctl.time_stamp - old_ts);
+            Serial.println(g_ctx.live_ctl.time_stamp - old_ts);
 
             // Prepare values
-            g_accgyro.read();
+            g_ctx.accgyro.read();
 
             // Prepare live frames
-            g_frame.answer.id = ANS_ID_LIVE;
+            g_ctx.frame.answer.id = ANS_ID_LIVE;
 
             // TODO: in the real app, we should verify if each
             // one of them are enabled
 
             // Send raw acc data
-            g_frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
-            g_frame.answer.sub.sensor_data.data.raw = g_accgyro.get_raw_acc();
-            g_fhandler->write_frame(&g_frame);
+            g_ctx.frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
+            g_ctx.frame.answer.sub.sensor_data.data.raw = g_ctx.accgyro.get_raw_acc();
+            g_ctx.fhandler->write_frame(&g_ctx.frame);
 
             // Send raw gyro data
-            g_frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
-            g_frame.answer.sub.sensor_data.data.raw = g_accgyro.get_raw_gyro();
-            g_fhandler->write_frame(&g_frame);
+            g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
+            g_ctx.frame.answer.sub.sensor_data.data.raw = g_ctx.accgyro.get_raw_gyro();
+            g_ctx.fhandler->write_frame(&g_ctx.frame);
 
             // Send quat data
-            g_frame.answer.sub.sensor_data.type = SENS_QUAT;
-            g_frame.answer.sub.sensor_data.data.quat = g_accgyro.get_quat();
-            g_fhandler->write_frame(&g_frame);
+            g_ctx.frame.answer.sub.sensor_data.type = SENS_QUAT;
+            g_ctx.frame.answer.sub.sensor_data.data.quat = g_ctx.accgyro.get_quat();
+            g_ctx.fhandler->write_frame(&g_ctx.frame);
 
             // Send euler data
-            g_frame.answer.sub.sensor_data.type = SENS_EULER;
-            g_frame.answer.sub.sensor_data.data.euler = g_accgyro.get_euler();
-            g_fhandler->write_frame(&g_frame);
+            g_ctx.frame.answer.sub.sensor_data.type = SENS_EULER;
+            g_ctx.frame.answer.sub.sensor_data.data.euler = g_ctx.accgyro.get_euler();
+            g_ctx.fhandler->write_frame(&g_ctx.frame);
 
             // Send gravity data
-            g_frame.answer.sub.sensor_data.type = SENS_GRAVITY;
-            g_frame.answer.sub.sensor_data.data.gravity = g_accgyro.get_gravity();
-            g_fhandler->write_frame(&g_frame);
+            g_ctx.frame.answer.sub.sensor_data.type = SENS_GRAVITY;
+            g_ctx.frame.answer.sub.sensor_data.data.gravity = g_ctx.accgyro.get_gravity();
+            g_ctx.fhandler->write_frame(&g_ctx.frame);
 
             //Serial.print("Mv etime:");
-            //Serial.println(micros() - g_live_ctl.time_stamp);
+            //Serial.println(micros() - g_ctx.live_ctl.time_stamp);
         }
     }
 }
