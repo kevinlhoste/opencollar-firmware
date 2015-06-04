@@ -5,58 +5,7 @@
 #include "MvFrameHandler.h"
 #include "MvCom.h"
 #include "MvAccGyro.h"
-
-
-class DummyMvCom : public MvCom
-{
-    public:
-        DummyMvCom()
-        {
-            // set the time this dummy com will block on readBytesUntil function call
-            Serial.setTimeout(1);
-        }
-
-        int write_frame(char *frame, int size)
-        {
-            //Serial.print("MvCom write_frame size:");
-            //Serial.print(size);
-            //Serial.print("\n");
-
-            Serial.write(frame, size);
-            Serial.print("\n");
-        }
-
-        int read_frame(char *frame, int *size)
-        {
-            *size = Serial.readBytesUntil('\n', frame, 100);
-
-            if (*size)
-            {
-                //Serial.print("MvCom read_frame ");
-                //Serial.print(*size);
-                //Serial.print(":");
-                Serial.write(frame, *size);
-                Serial.print("\n");
-            }
-
-            return 0;
-        }
-
-        int set_mode(enum mvCom_mode mode)
-        {
-            Serial.print("MvCom set_mode\n");
-            // We don't support changing the mode
-            return ANS_NACK_UNKNOWN_CMD;
-        }
-
-        enum mvCom_mode get_mode(void)
-        {
-            //Serial.print("MvCom get_mode\n");
-            return MVCOM_ASCII;
-        }
-};
-
-// -------------------------------------------------
+#include "SerialMvCom.h"
 
 struct app_context
 {
@@ -69,7 +18,6 @@ struct app_context
         int ref;
     } live_ctl;
 
-    MvCom *com;
     MvFrameHandler *fhandler;
     MvAccGyro accgyro;
     struct frame frame;
@@ -78,6 +26,7 @@ struct app_context
 void setup()
 {
     int i;
+    MvCom *com[2];
 
     g_ctx.live_ctl.ref = 0;
     g_ctx.live_ctl.time_stamp = 0;
@@ -87,10 +36,12 @@ void setup()
         g_ctx.live_ctl.com_list[i] == NULL;
 
     Serial.begin(38400);
+    Serial1.begin(9600);
 
-    g_ctx.com = new DummyMvCom;
+    com[0] = new SerialMvCom(&Serial);
+    com[1] = new SerialMvCom(&Serial1);
 
-    g_ctx.fhandler = new MvFrameHandler(&g_ctx.com, 1);
+    g_ctx.fhandler = new MvFrameHandler(com, 2);
 }
 
 void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans_err)
@@ -191,12 +142,12 @@ void loop()
         switch(g_ctx.frame.cmd.id)
         {
             case CMD_PING:
-                Serial.print("Mv Live period:");
-                Serial.println(g_ctx.live_ctl.period);
-                Serial.print("Mv Live ts:");
-                Serial.println(g_ctx.live_ctl.time_stamp);
-                Serial.print("Mv Time now:");
-                Serial.println(micros());
+                //Serial.print("Mv Live period:");
+                //Serial.println(g_ctx.live_ctl.period);
+                //Serial.print("Mv Live ts:");
+                //Serial.println(g_ctx.live_ctl.time_stamp);
+                //Serial.print("Mv Time now:");
+                //Serial.println(micros());
 
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 break;
@@ -297,8 +248,8 @@ void loop()
             // Set new time_stamp
             g_ctx.live_ctl.time_stamp = micros();
 
-            Serial.print("Mv interval:");
-            Serial.println(g_ctx.live_ctl.time_stamp - old_ts);
+            //Serial.print("Mv interval:");
+            //Serial.println(g_ctx.live_ctl.time_stamp - old_ts);
 
             // Prepare values
             g_ctx.accgyro.read();
