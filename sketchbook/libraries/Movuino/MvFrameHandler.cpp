@@ -334,13 +334,13 @@ int MvFrameHandler::write_frame(struct frame *frame)
 {
     if(!frame) return ANS_NACK_INTERNAL_ERR;
 
-    enum mvCom_mode mode = (*this->com_list[frame->com]).get_mode();
+    enum mvCom_mode mode = frame->com->get_mode();
 
     int ret = this->build_answer_frame(buffer, &(frame->answer), mode);
 
     if(ret > 0)
     {
-        (*this->com_list[frame->com]).write_frame(buffer, ret);
+        frame->com->write_frame(buffer, ret);
     }
 
     return ret;
@@ -367,14 +367,14 @@ int MvFrameHandler::read_frame(struct frame *frame)
     // Iterate through all the com ports
     for(int i = 0; i < this->com_list_size; i++)
     {
-        (*this->com_list[i]).read_frame(buffer, &read_size);
+        this->com_list[i]->read_frame(buffer, &read_size);
         if(read_size)
         {
             // Save the com port that we received the frame
-            frame->com = i;
+            frame->com = this->com_list[i];
 
             return this->parse_cmd_frame(buffer, read_size, &frame->cmd,
-                                            (*this->com_list[i]).get_mode());
+                                            this->com_list[i]->get_mode());
         }
     }
 
@@ -405,10 +405,10 @@ int MvFrameHandler::exec_com_cmd(struct frame *frame)
     if(!frame || frame->cmd.id != CMD_SWITCH_MODE)
         return ANS_NACK_INTERNAL_ERR;
 
-    if((*this->com_list[frame->com]).get_mode() == MVCOM_ASCII)
-        return (*this->com_list[frame->com]).set_mode(MVCOM_BINARY);
+    if(frame->com->get_mode() == MVCOM_ASCII)
+        return frame->com->set_mode(MVCOM_BINARY);
     else
-        return (*this->com_list[frame->com]).set_mode(MVCOM_ASCII);
+        return frame->com->set_mode(MVCOM_ASCII);
 
     return 0;
 }

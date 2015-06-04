@@ -24,9 +24,8 @@ struct frame {
     struct cmd cmd;
     /** The cmd field is filled by user of this library */
     struct answer answer;
-    /** This is an internal variable that keeps track the com port that originated the
-     * command. This field must not be changed by the user */
-    int com;
+    /** The MvCom from were the command came from and to were the answer must be sent */
+    MvCom *com;
 };
 
 class MvFrameHandler {
