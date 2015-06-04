@@ -23,6 +23,7 @@ class DummyMvCom : public MvCom
             //Serial.print("\n");
 
             Serial.write(frame, size);
+            Serial.print("\n");
         }
 
         int read_frame(char *frame, int *size)
