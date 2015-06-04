@@ -34,6 +34,13 @@ THE SOFTWARE.
 ===============================================
 */
 
+/*
+ * TODO: Including MPU6050_6Axis_MotionApps20.h here is bad, it forces the use of
+ * the Motionsapps 20. As the MPU6050 lib put codes in the header files, this is
+ * necessary to be able to use this lib within another lib
+ */
+#include "MPU6050_6Axis_MotionApps20.h"
+//#include "MPU6050_9Axis_MotionApps41.h"
 #include "MPU6050.h"
 
 /** Default constructor, uses default I2C address.
