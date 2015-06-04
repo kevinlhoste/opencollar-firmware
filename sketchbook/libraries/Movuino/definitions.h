@@ -20,7 +20,7 @@
  *
  * The frame identifier printed in all answers in ascii mode
  */
-#define FRAME_ASCII_PREFIX "F:%c "
+#define FRAME_ASCII_PREFIX "F: %c "
 
 /**
  * FLOAT_BUFFER_SIZE

@@ -180,7 +180,7 @@ int SerialMvCom::read_frame(char *frame, int *size)
 int SerialMvCom::_write_frame_ascii(char *frame, int size)
 {
     /* print the sequencer */
-    this->serial->write("S:");
+    this->serial->write("S: ");
     this->serial->print((int)this->sequencer);
     this->serial->write(' ');
     /* print the frame */

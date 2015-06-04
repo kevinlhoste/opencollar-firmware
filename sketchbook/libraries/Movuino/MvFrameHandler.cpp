@@ -193,12 +193,12 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
         case ANS_ID_NACK:
             // TODO: interpret nack values and print the not just the error number
             // but the error name in ascii too
-            sprintf(buffer, FRAME_ASCII_PREFIX "ERR:%d DESC:%s", ans->id,
+            sprintf(buffer, FRAME_ASCII_PREFIX "ERR: %d DESC: %s", ans->id,
                     ans->sub.nack_value, this->err_description(ans->sub.nack_value));
             goto ret;
 
         case ANS_ID_VERSION:
-            sprintf(buffer, FRAME_ASCII_PREFIX "VERSION:%d.%d.%d",
+            sprintf(buffer, FRAME_ASCII_PREFIX "VERSION: %d.%d.%d",
                     ans->id,
                     ans->sub.version[0],
                     ans->sub.version[1],
@@ -206,7 +206,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
             goto ret;
 
         case ANS_ID_CONFIG_GET:
-            sprintf(buffer, FRAME_ASCII_PREFIX "CFG:%c VAL:%d",
+            sprintf(buffer, FRAME_ASCII_PREFIX "CFG: %c VAL: %d",
                     ans->id,
                     ans->sub.cfg.id,
                     ans->sub.cfg.value);
@@ -220,7 +220,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
 
                 case SENS_ACC_RAW:
                 case SENS_GYRO_RAW:
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENSOR:%c X:%d Y:%d Z:%d",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c X: %d Y: %d Z: %d",
                             ans->id,
                             ans->sub.sensor_data.type,
                             ans->sub.sensor_data.data.raw.x,
@@ -235,7 +235,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                     dtostrf(ans->sub.sensor_data.data.quat.y, 1, 2, float_str[2]);
                     dtostrf(ans->sub.sensor_data.data.quat.z, 1, 2, float_str[3]);
 
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENSOR:%c W:%s X:%s Y:%s Z:%s",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c W: %s X: %s Y: %s Z: %s",
                             ans->id,
                             ans->sub.sensor_data.type,
                             float_str[0],
@@ -250,7 +250,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                     dtostrf(ans->sub.sensor_data.data.euler.theta,   1, 2, float_str[1]);
                     dtostrf(ans->sub.sensor_data.data.euler.phi,     1, 2, float_str[2]);
 
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENSOR:%c PSI:%s THETA:%s PHI:%s",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c PSI: %s THETA: %s PHI: %s",
                             ans->id,
                             ans->sub.sensor_data.type,
                             float_str[0],
@@ -264,7 +264,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                     dtostrf(ans->sub.sensor_data.data.gravity.pitch,   1, 2, float_str[1]);
                     dtostrf(ans->sub.sensor_data.data.gravity.roll,    1, 2, float_str[2]);
 
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENSOR:%c YAW:%s PITCH:%s ROLL:%s",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c YAW: %s PITCH: %s ROLL: %s",
                             ans->id,
                             ans->sub.sensor_data.type,
                             float_str[0],
