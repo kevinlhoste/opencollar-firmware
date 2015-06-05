@@ -1,6 +1,8 @@
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
+#include "SPI.h"
+#include "DataFlash.h"
 
 #include "MvFrameHandler.h"
 #include "MvCom.h"

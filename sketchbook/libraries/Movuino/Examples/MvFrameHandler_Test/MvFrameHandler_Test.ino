@@ -1,6 +1,10 @@
+// This includes are needed because otherwise the Arduino cannot find the headers
+// for internal use of the libs
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
+#include "SPI.h"
+#include "DataFlash.h"
 
 #include "MvFrameHandler.h"
 #include "MvCom.h"
