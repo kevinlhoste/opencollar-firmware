@@ -121,14 +121,38 @@ int MvAccGyro::close(void)
 
 int MvAccGyro::set_acc_sens(unsigned int value)
 {
-    // TODO
-    return 0;
+    switch(value)
+    {
+        case CFG_ACC_SENS_2G:
+        case CFG_ACC_SENS_4G:
+        case CFG_ACC_SENS_8G:
+        case CFG_ACC_SENS_16G:
+            MvAccGyro::accelgyro.setFullScaleAccelRange(value);
+            if(MvAccGyro::accelgyro.getFullScaleAccelRange() != value)
+                return ANS_NACK_UNKNOWN_CFG;
+            return 0;
+
+        default:
+            return ANS_NACK_UNKNOWN_CFG;
+
+    }
 }
 
 int MvAccGyro::set_gyro_sens(unsigned int value)
 {
-    // TODO
-    return 0;
+    switch(value)
+    {
+        case CFG_GYRO_SENS_250DS:
+        case CFG_GYRO_SENS_500DS:
+        case CFG_GYRO_SENS_1000DS:
+        case CFG_GYRO_SENS_2000DS:
+            MvAccGyro::accelgyro.setFullScaleGyroRange(value);
+            if(MvAccGyro::accelgyro.getFullScaleGyroRange() != value)
+                return ANS_NACK_INTERNAL_ERR;
+            return 0;
+        default:
+            return ANS_NACK_INTERNAL_ERR;
+    }
 }
 
 int MvAccGyro::read(void)
