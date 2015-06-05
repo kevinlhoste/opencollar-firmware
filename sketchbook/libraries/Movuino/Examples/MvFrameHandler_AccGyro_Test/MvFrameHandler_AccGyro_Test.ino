@@ -1,3 +1,5 @@
+// This includes are needed because otherwise the Arduino cannot find the headers
+// for internal use of the libs
 #include "I2Cdev.h"
 #include "MPU6050.h"
 #include "Wire.h"
@@ -21,7 +23,6 @@ struct app_context
     } live_ctl;
 
     MvFrameHandler *fhandler;
-    MvAccGyro accgyro;
     struct frame frame;
 } g_ctx;
 
@@ -159,7 +160,7 @@ void loop()
 
                 /* Check if the acc has already been initialized */
                 if (!g_ctx.live_ctl.ref)
-                    ans_err = g_ctx.accgyro.open();
+                    ans_err = MvAccGyro::open();
 
                 if (!ans_err)
                     add_com_to_live_list(g_ctx.frame.com);
@@ -174,7 +175,7 @@ void loop()
 
                 /* If there is no more com ports in live mode */
                 if (!g_ctx.live_ctl.ref)
-                    ans_err = g_ctx.accgyro.close();
+                    ans_err = MvAccGyro::close();
 
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 break;
@@ -184,11 +185,11 @@ void loop()
                 {
                     // TODO: in the real app, write the config into flash and change
                     case CFG_ID_ACC_SENS:
-                        ans_err = g_ctx.accgyro.set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
+                        ans_err = MvAccGyro::set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                         break;
                     case CFG_ID_GYRO_SENS:
-                        ans_err = g_ctx.accgyro.set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
+                        ans_err = MvAccGyro::set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
                         break;
 
@@ -243,6 +244,11 @@ void loop()
     // Deal with live
     if (g_ctx.live_ctl.ref)
     {
+        // Prepare values
+        // This is called every loop because if the DMP is being used, we must call this function
+        // to read from the FIFO
+        MvAccGyro::read();
+
         // Check if its time to print the next data
         if(check_live_time(g_ctx.live_ctl.time_stamp, g_ctx.live_ctl.period))
         {
@@ -253,9 +259,6 @@ void loop()
             //Serial.print("Mv interval:");
             //Serial.println(g_ctx.live_ctl.time_stamp - old_ts);
 
-            // Prepare values
-            g_ctx.accgyro.read();
-
             // Prepare live frames
             g_ctx.frame.answer.id = ANS_ID_LIVE;
 
@@ -264,28 +267,35 @@ void loop()
 
             // Send raw acc data
             g_ctx.frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
-            g_ctx.frame.answer.sub.sensor_data.data.raw = g_ctx.accgyro.get_raw_acc();
+            g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_acc();
             send_live(&g_ctx.frame);
 
             // Send raw gyro data
             g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
-            g_ctx.frame.answer.sub.sensor_data.data.raw = g_ctx.accgyro.get_raw_gyro();
+            g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_gyro();
             send_live(&g_ctx.frame);
 
+#ifdef MV_ACC_GYRO_DMP_EN
             // Send quat data
             g_ctx.frame.answer.sub.sensor_data.type = SENS_QUAT;
-            g_ctx.frame.answer.sub.sensor_data.data.quat = g_ctx.accgyro.get_quat();
+            g_ctx.frame.answer.sub.sensor_data.data.quat = MvAccGyro::get_quat();
             send_live(&g_ctx.frame);
 
+#ifdef MV_ACC_GYRO_DMP_EULER_EN
             // Send euler data
             g_ctx.frame.answer.sub.sensor_data.type = SENS_EULER;
-            g_ctx.frame.answer.sub.sensor_data.data.euler = g_ctx.accgyro.get_euler();
+            g_ctx.frame.answer.sub.sensor_data.data.euler = MvAccGyro::get_euler();
             send_live(&g_ctx.frame);
+#endif //#ifdef MV_ACC_GYRO_DMP_EULER_EN
 
+#ifdef MV_ACC_GYRO_DMP_GRAV_EN
             // Send gravity data
             g_ctx.frame.answer.sub.sensor_data.type = SENS_GRAVITY;
-            g_ctx.frame.answer.sub.sensor_data.data.gravity = g_ctx.accgyro.get_gravity();
+            g_ctx.frame.answer.sub.sensor_data.data.gravity = MvAccGyro::get_gravity();
             send_live(&g_ctx.frame);
+#endif //#ifdef MV_ACC_GYRO_DMP_GRAV_EN
+
+#endif //#ifdef MV_ACC_GYRO_DMP_EN
 
             //Serial.print("Mv etime:");
             //Serial.println(micros() - g_ctx.live_ctl.time_stamp);
