@@ -136,8 +136,10 @@ struct cfg {
  * cmd
  *
  * Describre the received command frame
+ * it has the packed attribute, so its data will be contigous to parse
+ * it from a binary stream
  */
-struct cmd {
+struct __attribute__((packed)) cmd {
     /** value from enum cmd_id that describes the command type */
     uint8_t id;
     /** store the additional data from the command */
@@ -287,9 +289,10 @@ struct sensor_data {
  * answer
  *
  * constain the information necessary to send a frame to the external user
+ * it has the packed attribute, so its data will be contigous to transform
+ * it in a binary stream
  */
-struct answer {
-
+struct __attribute__((packed)) answer {
     uint8_t id;
     union {
         int8_t nack_value;

@@ -55,7 +55,17 @@ int MvFrameHandler::ignore_spaces(char *buffer, int size, int start)
 int MvFrameHandler::parse_cmd_frame_bin_mode(char *read_buffer, int read_size,
                                                 struct cmd *cmd)
 {
-    // TODO
+    *cmd = *(struct cmd*)read_buffer;
+
+    /* Check size error */
+
+    /* The config set command has the size of the id plus the size of its arguments */
+    /* All the other commands has no arguments */
+    if ((cmd->id == CMD_CONFIG_SET && read_size != sizeof(cmd->id) + sizeof(cmd->sub.cfg)) ||
+        (cmd->id != CMD_CONFIG_SET && read_size != sizeof(cmd->id)))
+        return ANS_NACK_BAD_FRAME_FORMAT;
+
+    return SUCCESS_FRAME_READ;
 }
 
 /**
@@ -287,7 +297,59 @@ ret:
  */
 int MvFrameHandler::build_answer_frame_bin_mode(char *buffer, struct answer *ans)
 {
-    // TODO
+    unsigned int size = 0, i;
+
+    /* Count the bytes to be copied from the strut answer to the buffer */
+    
+    /* The id */
+    size += sizeof(ans->id);
+
+    switch(ans->id)
+    {
+        case ANS_ID_ACK:
+            /* This frame has just an id */
+            break;
+
+        case ANS_ID_NACK:
+            size += sizeof(ans->sub.nack_value);
+            break;
+
+        case ANS_ID_VERSION:
+            size += sizeof(ans->sub.version);
+            break;
+
+        case ANS_ID_CONFIG_GET:
+            size += sizeof(ans->sub.cfg);
+            break;
+
+        case ANS_ID_LIVE:
+        case ANS_ID_REC_PLAY:
+            /* The first byte is the live id */
+            size += sizeof(ans->sub.sensor_data.type);
+            switch(ans->sub.sensor_data.type)
+            {
+                case SENS_ACC_RAW:
+                case SENS_GYRO_RAW:
+                    size += sizeof(ans->sub.sensor_data.data.raw);
+                    break;
+                case SENS_QUAT:
+                    size += sizeof(ans->sub.sensor_data.data.quat);
+                    break;
+                case SENS_EULER:
+                    size += sizeof(ans->sub.sensor_data.data.euler);
+                    break;
+                case SENS_GRAVITY:
+                    size += sizeof(ans->sub.sensor_data.data.gravity);
+                    break;
+            }
+            break;
+    }
+
+    /* Copy the data to the buffer */
+    for (i = 0; i < size; i++)
+        buffer[i] = ((char*)ans)[i];
+
+    return size;
 }
 
 /**
