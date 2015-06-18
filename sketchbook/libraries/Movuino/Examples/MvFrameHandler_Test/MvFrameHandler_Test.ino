@@ -20,6 +20,7 @@ class DummyMvCom : public MvCom
 
             Serial.write(frame, size);
             Serial.print("\n");
+            return size;
         }
 
         int read_frame(char *frame, int *size)
@@ -75,30 +76,36 @@ void setup()
 
     // Prepare answers for testing
     frame_ack.answer.id = ANS_ID_ACK;
+    frame_ack.com = g_com;
 
     frame_nack.answer.id = ANS_ID_NACK;
     frame_nack.answer.sub.nack_value = -4;
+    frame_nack.com = g_com;
 
     frame_version.answer.id = ANS_ID_VERSION;
     frame_version.answer.sub.version[0] = 6;
     frame_version.answer.sub.version[1] = 45;
     frame_version.answer.sub.version[2] = 2;
+    frame_version.com = g_com;
 
     frame_cfg_get.answer.id = ANS_ID_CONFIG_GET;
     frame_cfg_get.answer.sub.cfg.id = CFG_ID_ACC_SENS;
     frame_cfg_get.answer.sub.cfg.value = CFG_ACC_SENS_8G;
+    frame_cfg_get.com = g_com;
 
     frame_sensor_acc_raw.answer.id = ANS_ID_LIVE;
     frame_sensor_acc_raw.answer.sub.sensor_data.type = SENS_ACC_RAW;
     frame_sensor_acc_raw.answer.sub.sensor_data.data.raw.x = 9;
     frame_sensor_acc_raw.answer.sub.sensor_data.data.raw.y = 8;
     frame_sensor_acc_raw.answer.sub.sensor_data.data.raw.z = 7;
+    frame_sensor_acc_raw.com = g_com;
 
     frame_sensor_gyro_raw.answer.id = ANS_ID_REC_PLAY;
     frame_sensor_gyro_raw.answer.sub.sensor_data.type = SENS_GYRO_RAW;
     frame_sensor_gyro_raw.answer.sub.sensor_data.data.raw.x = 5;
     frame_sensor_gyro_raw.answer.sub.sensor_data.data.raw.y = 4;
     frame_sensor_gyro_raw.answer.sub.sensor_data.data.raw.z = 3;
+    frame_sensor_gyro_raw.com = g_com;
 
     frame_sensor_quat.answer.id = ANS_ID_LIVE;
     frame_sensor_quat.answer.sub.sensor_data.type = SENS_QUAT;
@@ -106,18 +113,21 @@ void setup()
     frame_sensor_quat.answer.sub.sensor_data.data.quat.x = 4.32;
     frame_sensor_quat.answer.sub.sensor_data.data.quat.y = -1105.98;
     frame_sensor_quat.answer.sub.sensor_data.data.quat.z = 98.0;
+    frame_sensor_quat.com = g_com;
 
     frame_sensor_euler.answer.id = ANS_ID_REC_PLAY;
     frame_sensor_euler.answer.sub.sensor_data.type = SENS_EULER;
     frame_sensor_euler.answer.sub.sensor_data.data.euler.psi = 4.32;
     frame_sensor_euler.answer.sub.sensor_data.data.euler.theta = -1105.98;
     frame_sensor_euler.answer.sub.sensor_data.data.euler.phi = 98.0;
+    frame_sensor_euler.com = g_com;
 
     frame_sensor_grav.answer.id = ANS_ID_REC_PLAY;
     frame_sensor_grav.answer.sub.sensor_data.type = SENS_GRAVITY;
     frame_sensor_grav.answer.sub.sensor_data.data.gravity.yaw = 4.32;
     frame_sensor_grav.answer.sub.sensor_data.data.gravity.pitch = -1105.98;
     frame_sensor_grav.answer.sub.sensor_data.data.gravity.roll = 98.0;
+    frame_sensor_grav.com = g_com;
 }
 
 void loop()
