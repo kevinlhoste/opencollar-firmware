@@ -187,12 +187,14 @@ enum ans_nack {
     ANS_NACK_EMPTY_MEMORY = -2,
     /** the record memory is full */
     ANS_NACK_MEMORY_FULL = -3,
+    /** the flash storage is unavailable */
+    ANS_NACK_MEMORY_UNAVAILABLE = -4,
     /** the received frame came with an unknown command */
-    ANS_NACK_UNKNOWN_CMD = -4,
+    ANS_NACK_UNKNOWN_CMD = -5,
     /** the configuration command came with an unknown configuration value */
-    ANS_NACK_UNKNOWN_CFG = -5,
+    ANS_NACK_UNKNOWN_CFG = -6,
     /** internal error, this should never happen */
-    ANS_NACK_INTERNAL_ERR = -6
+    ANS_NACK_INTERNAL_ERR = -7
 };
 
 /**
