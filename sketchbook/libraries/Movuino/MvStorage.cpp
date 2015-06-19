@@ -134,26 +134,26 @@ int MvStorage::reset(void)
 }
 
 /* declaration of the setters and getters */
-#define MVSTORAGE_SET_GET(VAR, TYPE)    \
-int MvStorage::set_##VAR(TYPE value)    \
+#define MVSTORAGE_SET_GET(VAR)          \
+int MvStorage::set_##VAR(uint8_t value) \
 {                                       \
     this->data.VAR = value;             \
     return this->write_storage_data();  \
 }                                       \
                                         \
-TYPE MvStorage::get_##VAR(void)         \
+uint8_t MvStorage::get_##VAR(void)      \
 {                                       \
     return this->data.VAR;              \
 }
 
-MVSTORAGE_SET_GET(live_acc, enum cfg_live)
-MVSTORAGE_SET_GET(live_gyro, enum cfg_live)
-MVSTORAGE_SET_GET(live_quat, enum cfg_live)
-MVSTORAGE_SET_GET(live_euler, enum cfg_live)
-MVSTORAGE_SET_GET(live_gravity, enum cfg_live)
-MVSTORAGE_SET_GET(acc_sens, enum cfg_acc_sens)
-MVSTORAGE_SET_GET(gyro_sens, enum cfg_gyro_sens)
-MVSTORAGE_SET_GET(sampling_rate, uint8_t)
+MVSTORAGE_SET_GET(live_acc)
+MVSTORAGE_SET_GET(live_gyro)
+MVSTORAGE_SET_GET(live_quat)
+MVSTORAGE_SET_GET(live_euler)
+MVSTORAGE_SET_GET(live_gravity)
+MVSTORAGE_SET_GET(acc_sens)
+MVSTORAGE_SET_GET(gyro_sens)
+MVSTORAGE_SET_GET(sampling_rate)
 
 /**
  * rewind

@@ -289,18 +289,13 @@ ret:
 }
 
 /**
- * build_answer_frame_bin_mode
- *
- * @brief The same as build_answer_frame but specific to the mode ascii
- *
- * @see build_answer_frame
+ * ans_frame_size
+ * @brief return the amount of bytes from ans that is filled with data
  */
-int MvFrameHandler::build_answer_frame_bin_mode(char *buffer, struct answer *ans)
+int MvFrameHandler::ans_frame_size(struct answer *ans)
 {
-    unsigned int size = 0, i;
+    int size;
 
-    /* Count the bytes to be copied from the strut answer to the buffer */
-    
     /* The id */
     size += sizeof(ans->id);
 
@@ -345,6 +340,21 @@ int MvFrameHandler::build_answer_frame_bin_mode(char *buffer, struct answer *ans
             break;
     }
 
+    return size;
+}
+
+/**
+ * build_answer_frame_bin_mode
+ *
+ * @brief The same as build_answer_frame but specific to the mode ascii
+ *
+ * @see build_answer_frame
+ */
+int MvFrameHandler::build_answer_frame_bin_mode(char *buffer, struct answer *ans)
+{
+    unsigned int size, i;
+
+    size = this->ans_frame_size(ans);
     /* Copy the data to the buffer */
     for (i = 0; i < size; i++)
         buffer[i] = ((char*)ans)[i];
@@ -441,6 +451,47 @@ int MvFrameHandler::read_frame(struct frame *frame)
     }
 
     return SUCCESS_NO_FRAME_WAS_READ;
+}
+
+int MvFrameHandler::parse_ans_frame_bin_mode(char *buffer, int read_size, struct answer *ans)
+{
+    int size, i;
+
+    size = this->ans_frame_size((struct answer*)buffer);
+    if(size != read_size)
+        return ERROR_BAD_FRAME_SIZE;
+
+    for(i = 0; i < read_size; i++)
+    {
+        ((char*)ans)[i] = buffer[i];
+    }
+
+    return SUCCESS_FRAME_READ;
+}
+
+int MvFrameHandler::parse_ans_frame(char *buffer, int read_size, struct answer *ans, enum mvCom_mode mode)
+{
+    if(!buffer || !read_size)
+        return ANS_NACK_INTERNAL_ERR;
+
+    switch(mode)
+    {
+        case MVCOM_ASCII:
+            /*unsuported*/
+            return ANS_NACK_INTERNAL_ERR;
+        case MVCOM_BINARY:
+            return this->parse_ans_frame_bin_mode(buffer, read_size, ans);
+    }
+}
+
+int MvFrameHandler::read_answer_frame(struct frame *frame, MvCom *com)
+{
+    if(!frame) return ANS_NACK_INTERNAL_ERR;
+
+    int read_size = 0;
+    if(com->read_frame(buffer, &read_size) < 0)
+        return SUCCESS_NO_FRAME_WAS_READ;
+    return this->parse_ans_frame(buffer, read_size, &frame->answer, com->get_mode());
 }
 
 /**

@@ -9,6 +9,7 @@
 
 #define SUCCESS_NO_FRAME_WAS_READ 0
 #define SUCCESS_FRAME_READ 1
+#define ERROR_BAD_FRAME_SIZE -1
 
 /**
  * struct frame
@@ -38,6 +39,8 @@ class MvFrameHandler {
 
         int exec_com_cmd(struct frame *frame);
 
+        int read_answer_frame(struct frame *frame, MvCom *com);
+
     private:
         // ----------- variables --------------------------
         /** buffer
@@ -66,6 +69,9 @@ class MvFrameHandler {
         int build_answer_frame_bin_mode(char *buffer, struct answer *ans);
         int ignore_spaces(char *buffer, int size, int start);
         const char * err_description(int nack_value);
+        int ans_frame_size(struct answer *ans);
+        int parse_ans_frame_bin_mode(char *buffer, int read_size, struct answer *ans);
+        int parse_ans_frame(char *buffer, int read_size, struct answer *ans, enum mvCom_mode mode);
 
 };
 
