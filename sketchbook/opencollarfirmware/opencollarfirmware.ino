@@ -82,7 +82,7 @@ setup(void)
     sf_setup();
     accelgyro_setup();
     // TODO: this setup shouldn't be done here
-    accelgyro_quaternion_setup();
+    //accelgyro_quaternion_setup();
     
     startupDelay();
     

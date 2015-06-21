@@ -42,8 +42,13 @@ print_accelgyro(int mode)
         }
         if(accelgyro.enabled_sensors > 2)
         {
-          /* This is a stub code while we don't have the third sensor */
-          serial_print_str(" 0 0 0");
+          serial_print_char(' ');
+          serial_print_str(itoa(accelgyro.mx,itoa_buff,10));
+          serial_print_char(' ');
+          serial_print_str(itoa(accelgyro.my,itoa_buff,10));
+          serial_print_char(' ');
+          serial_print_str(itoa(accelgyro.mz,itoa_buff,10));
+          
         }
         serial_print_char('\n');
     }

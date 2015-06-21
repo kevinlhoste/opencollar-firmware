@@ -19,6 +19,7 @@ struct Accelgyro {
 MPU6050 mpu;
 int16_t ax, ay, az; //acceleroscope axes
 int16_t gx, gy, gz; //gyroscope axes
+int16_t mx, my, mz; //gyroscope axes
 int16_t sampling_rate; //unity = Hz
 char enabled_sensors;
 char acc_range;
@@ -71,17 +72,32 @@ accelgyro_setup(void)
     //Join I2C
     Wire.begin();
     accelgyro.mpu.initialize();
+    accelgyro.mpu.setI2CBypassEnabled(true);
+    delay(100);
+    Serial.println("Testing compass connections...");
+    Serial.println(accelgyro.mpu.checkMag() ? "Yep" : "Nope");
 }
 
 void
 accelgyro_get(void)
 {
-    accelgyro.mpu.getMotion6(&accelgyro.ax,
+  /* accelgyro.mpu.getMotion6(&accelgyro.ax,
                              &accelgyro.ay,
                              &accelgyro.az,
                              &accelgyro.gx,
                              &accelgyro.gy,
-                             &accelgyro.gz);
+                             &accelgyro.gz);*/
+  // Serial.println(accelgyro.mpu.checkMag() ? "Yep" : "Nope");                          
+  // accelgyro.mpu.getMag(&accelgyro.mx, &accelgyro.my, &accelgyro.mz);                         
+   accelgyro.mpu.getMotion9(&accelgyro.ax,
+                             &accelgyro.ay,
+                             &accelgyro.az,
+                             &accelgyro.gx,
+                             &accelgyro.gy,
+                             &accelgyro.gz,
+                             &accelgyro.mx,
+                             &accelgyro.my,
+                             &accelgyro.mz);
     
 }
 
