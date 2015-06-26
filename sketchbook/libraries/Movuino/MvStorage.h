@@ -6,7 +6,7 @@
 #include "frame_struct.h"
 #include "MvCom.h"
 
-#define INIT_KEY 0x5555
+#define INIT_KEY 0x7777
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 100
 

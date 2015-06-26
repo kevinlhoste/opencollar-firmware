@@ -42,7 +42,7 @@ enum cmd_id {
  *
  * Used in the struct cfg to specify the value of uint8_t id
  * to identify the subtype of the command frame of configuration
- * @brief sub-command from struct cmd
+ * @brief sub-command from
  * @see struct cfg
  */
 enum cfg_id {
@@ -51,7 +51,7 @@ enum cfg_id {
     /** gyroscope sensibility */
     CFG_ID_GYRO_SENS = 'g',
     /** sampling rate */
-    CFG_ID_SAMPING_RATE = 's',
+    CFG_ID_SAMPLING_RATE = 's',
     /** enable raw accelerometer at live mode */
     CFG_ID_LIVE_ACC_RAW_EN = 'A',
     /** enable raw gyroscope at live mode */

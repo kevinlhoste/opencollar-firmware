@@ -150,6 +150,27 @@ void send_live(struct frame *frame)
     }
 }
 
+void send_config(void)
+{
+    g_ctx.frame.answer.id = ANS_ID_CONFIG_GET;
+
+    g_ctx.frame.answer.sub.cfg.id = CFG_ID_ACC_SENS;
+    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_acc_sens();
+    g_ctx.fhandler->write_frame(&g_ctx.frame);
+    g_ctx.frame.answer.sub.cfg.id = CFG_ID_GYRO_SENS;
+    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_gyro_sens();
+    g_ctx.fhandler->write_frame(&g_ctx.frame);
+    g_ctx.frame.answer.sub.cfg.id = CFG_ID_SAMPLING_RATE;
+    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_sampling_rate();
+    g_ctx.fhandler->write_frame(&g_ctx.frame);
+    g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_ACC_RAW_EN;
+    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_acc();
+    g_ctx.fhandler->write_frame(&g_ctx.frame);
+    g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_GYRO_RAW_EN;
+    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_gyro();
+    g_ctx.fhandler->write_frame(&g_ctx.frame);
+}
+
 void loop()
 {
     int ans_err = ANS_NACK_UNKNOWN_CMD;
@@ -211,7 +232,7 @@ void loop()
                         g_ctx.storage->set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
                         break;
 
-                    case CFG_ID_SAMPING_RATE:
+                    case CFG_ID_SAMPLING_RATE:
                         set_live_sampling_rate(g_ctx.frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                         break;
@@ -252,8 +273,13 @@ void loop()
                  }
                  else
                  {
+                    MvCom *aux_com;
                     g_ctx.storage->rewind();
                     /* TODO: Write the configuration frame */
+                    aux_com = g_ctx.frame.com;
+                    g_ctx.frame.com = g_ctx.storage;
+                    send_config();
+                    g_ctx.frame.com = aux_com;
                     add_com_to_live_list(g_ctx.storage);
                     send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                  }
@@ -285,10 +311,13 @@ void loop()
                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 }
                 break;
+            case CMD_CONFIG_GET:
+                    send_config();
+                   send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
+                break;
             case CMD_REC_CLEAR:
             case CMD_HELP:
             case CMD_VERSION_GET:
-            case CMD_CONFIG_GET:
             default:
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CMD);
                 break;
@@ -330,33 +359,48 @@ void loop()
             // one of them are enabled
 
             // Send raw acc data
-            g_ctx.frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
-            g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_acc();
-            send_live(&g_ctx.frame);
-
+            if(g_ctx.storage->get_live_acc())
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
+                g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_acc();
+                send_live(&g_ctx.frame);
+            }
             // Send raw gyro data
-            g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
-            g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_gyro();
-            send_live(&g_ctx.frame);
+            if(g_ctx.storage->get_live_gyro())
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
+                g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_gyro();
+                send_live(&g_ctx.frame);
+            }
 
 #ifdef MV_ACC_GYRO_DMP_EN
             // Send quat data
-            g_ctx.frame.answer.sub.sensor_data.type = SENS_QUAT;
-            g_ctx.frame.answer.sub.sensor_data.data.quat = MvAccGyro::get_quat();
-            send_live(&g_ctx.frame);
+            if(g_ctx.storage->get_live_quat())
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_QUAT;
+                g_ctx.frame.answer.sub.sensor_data.data.quat = MvAccGyro::get_quat();
+                send_live(&g_ctx.frame);
+            }
 
 #ifdef MV_ACC_GYRO_DMP_EULER_EN
             // Send euler data
-            g_ctx.frame.answer.sub.sensor_data.type = SENS_EULER;
-            g_ctx.frame.answer.sub.sensor_data.data.euler = MvAccGyro::get_euler();
-            send_live(&g_ctx.frame);
+            if(g_ctx.storage->get_live_euler())
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_EULER;
+                g_ctx.frame.answer.sub.sensor_data.data.euler = MvAccGyro::get_euler();
+                send_live(&g_ctx.frame);
+            }
 #endif //#ifdef MV_ACC_GYRO_DMP_EULER_EN
 
 #ifdef MV_ACC_GYRO_DMP_GRAV_EN
             // Send gravity data
-            g_ctx.frame.answer.sub.sensor_data.type = SENS_GRAVITY;
-            g_ctx.frame.answer.sub.sensor_data.data.gravity = MvAccGyro::get_gravity();
-            send_live(&g_ctx.frame);
+            if(g_ctx.storage->get_live_gravity())
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_GRAVITY;
+                g_ctx.frame.answer.sub.sensor_data.data.gravity = MvAccGyro::get_gravity();
+                send_live(&g_ctx.frame);
+            }
+
 #endif //#ifdef MV_ACC_GYRO_DMP_GRAV_EN
 
 #endif //#ifdef MV_ACC_GYRO_DMP_EN
