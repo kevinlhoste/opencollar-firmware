@@ -307,6 +307,9 @@ void loop()
                     while(g_ctx.fhandler->read_answer_frame(&g_ctx.frame,g_ctx.storage) == SUCCESS_FRAME_READ)
                     {
                         g_ctx.fhandler->write_frame(&g_ctx.frame);
+                        // this is too fast causing overflow on the serial, delay a little
+                        // TODO: check a better way to avoid overflow
+                        delay(1);
                     }
                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 }
