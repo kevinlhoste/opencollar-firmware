@@ -109,7 +109,6 @@ void MvStorage::clear_recordings(void)
     this->flash.bufferWrite(0,0);
     SPI.transfer(0);
     this->flash.bufferToPage(0,1);
-    return 0;
 }
 
 /**

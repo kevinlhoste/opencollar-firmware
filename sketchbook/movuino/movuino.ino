@@ -26,6 +26,7 @@ struct app_context
     MvFrameHandler *fhandler;
     struct frame frame;
     MvStorage *storage;
+    uint8_t version[3] = {0, 0, 1};
 } g_ctx;
 
 void setup()
@@ -306,12 +307,16 @@ void loop()
                     g_ctx.storage->rewind();
                     while(g_ctx.fhandler->read_answer_frame(&g_ctx.frame,g_ctx.storage) == SUCCESS_FRAME_READ)
                     {
+                        if(g_ctx.frame.answer.id == ANS_ID_LIVE)
+                        {
+                            g_ctx.frame.answer.id = ANS_ID_REC_PLAY;
+                        }
                         g_ctx.fhandler->write_frame(&g_ctx.frame);
                         // this is too fast causing overflow on the serial, delay a little
                         // TODO: check a better way to avoid overflow
                         delay(1);
                     }
-                   send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
+                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 }
                 break;
             case CMD_CONFIG_GET:
@@ -319,8 +324,24 @@ void loop()
                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 break;
             case CMD_REC_CLEAR:
-            case CMD_HELP:
+                if(g_ctx.storage->status() != 0)
+                {
+                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_MEMORY_UNAVAILABLE);
+                }
+                else
+                {
+                    g_ctx.storage->clear_recordings();
+                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
+                }
+                break;
             case CMD_VERSION_GET:
+                g_ctx.frame.answer.id = ANS_ID_VERSION;
+                g_ctx.frame.answer.sub.version[0] = g_ctx.version[0];
+                g_ctx.frame.answer.sub.version[1] = g_ctx.version[1];
+                g_ctx.frame.answer.sub.version[2] = g_ctx.version[2];
+                g_ctx.fhandler->write_frame(&g_ctx.frame);
+                break;
+            case CMD_HELP:
             default:
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CMD);
                 break;
