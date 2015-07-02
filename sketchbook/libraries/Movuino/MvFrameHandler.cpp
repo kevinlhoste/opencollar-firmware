@@ -197,7 +197,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
     switch(ans->id)
     {
         case ANS_ID_ACK:
-            sprintf(buffer, FRAME_ASCII_PREFIX "OK", ans->id);
+            sprintf(buffer, FRAME_ASCII_PREFIX "DESC: OK", ans->id);
             goto ret;
 
         case ANS_ID_NACK:
