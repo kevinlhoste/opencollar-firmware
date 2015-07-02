@@ -67,6 +67,7 @@ class MvStorage : public MvCom
         uint8_t get_gyro_sens(void);
         uint8_t get_sampling_rate(void);
         void rewind(void);
+        void clear_recordings(void);
     private:
         /** Data that is in the persistent memory */
         struct storage_data data;

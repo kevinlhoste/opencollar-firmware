@@ -98,6 +98,21 @@ int MvStorage::write_storage_data(void)
 }
 
 /**
+ * clear_recordings
+ *
+ * @brief clear recorded data
+ */
+void MvStorage::clear_recordings(void)
+{
+    /* write the record part to say it is empty */
+    this->flash.pageToBuffer(1,0);
+    this->flash.bufferWrite(0,0);
+    SPI.transfer(0);
+    this->flash.bufferToPage(0,1);
+    return 0;
+}
+
+/**
  * reset
  *
  * @brief reset all the variable values and tries to write it in the persistent memory.
@@ -110,13 +125,8 @@ int MvStorage::reset(void)
     this->soft_reset();
     /* write in memory */
     this->write_storage_data();
-
-    /* write the record part to say it is empty */
-    this->flash.pageToBuffer(1,0);
-    this->flash.bufferWrite(0,0);
-    SPI.transfer(0);
-    this->flash.bufferToPage(0,1);
-
+    /* clear the recorded data space */
+    this->clear_recordings();
     /* read the data that was writen */
     this->data.init_key = 0;
     this->read_storage_data();
