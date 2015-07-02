@@ -208,7 +208,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
             goto ret;
 
         case ANS_ID_VERSION:
-            sprintf(buffer, FRAME_ASCII_PREFIX "VERSION: %d.%d.%d",
+            sprintf(buffer, FRAME_ASCII_PREFIX "VER: %d.%d.%d",
                     ans->id,
                     ans->sub.version[0],
                     ans->sub.version[1],
