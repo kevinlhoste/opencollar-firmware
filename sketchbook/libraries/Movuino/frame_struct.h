@@ -47,21 +47,21 @@ enum cmd_id {
  */
 enum cfg_id {
     /** accelerometer sensibility */
-    CFG_ID_ACC_SENS = 'a',
+    CFG_ID_ACC_SENS = 'A',
     /** gyroscope sensibility */
-    CFG_ID_GYRO_SENS = 'g',
+    CFG_ID_GYRO_SENS = 'G',
     /** sampling rate */
     CFG_ID_SAMPLING_RATE = 's',
     /** enable raw accelerometer at live mode */
-    CFG_ID_LIVE_ACC_RAW_EN = 'A',
+    CFG_ID_LIVE_ACC_RAW_EN = 'a',
     /** enable raw gyroscope at live mode */
-    CFG_ID_LIVE_GYRO_RAW_EN = 'G',
+    CFG_ID_LIVE_GYRO_RAW_EN = 'g',
     /** enable quaternion at live mode */
-    CFG_ID_LIVE_QUATERNION_EN = 'Q',
+    CFG_ID_LIVE_QUATERNION_EN = 'q',
     /** enable euler at live mode */
-    CFG_ID_LIVE_EULER_EN = 'E',
+    CFG_ID_LIVE_EULER_EN = 'e',
     /** enable gravity vector at live mode */
-    CFG_ID_LIVE_GRAVITY_EN = 'Y',
+    CFG_ID_LIVE_GRAVITY_EN = 'y',
     /** enable all live modes */
     CFG_ID_LIVE_ALL_EN = 'l'
 };
