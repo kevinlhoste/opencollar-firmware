@@ -6,7 +6,7 @@
 #include "frame_struct.h"
 #include "MvCom.h"
 
-#define INIT_KEY 0x7777
+#define INIT_KEY 0x1234
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 100
 
@@ -22,6 +22,7 @@ struct storage_data
     uint8_t
         live_acc,
         live_gyro,
+        live_mag,
         live_quat,
         live_euler,
         live_gravity,
@@ -52,6 +53,7 @@ class MvStorage : public MvCom
         int reset(void);
         int set_live_acc(uint8_t value);
         int set_live_gyro(uint8_t value);
+        int set_live_mag(uint8_t value);
         int set_live_quat(uint8_t value);
         int set_live_euler(uint8_t value);
         int set_live_gravity(uint8_t value);
@@ -60,6 +62,7 @@ class MvStorage : public MvCom
         int set_sampling_rate(uint8_t value);
         uint8_t get_live_acc(void);
         uint8_t get_live_gyro(void);
+        uint8_t get_live_mag(void);
         uint8_t get_live_quat(void);
         uint8_t get_live_euler(void);
         uint8_t get_live_gravity(void);

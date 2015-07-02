@@ -69,6 +69,7 @@ void MvStorage::soft_reset(void)
 {
     this->data.live_acc = CFG_LIVE_ENABLE;
     this->data.live_gyro = CFG_LIVE_ENABLE;
+    this->data.live_mag = CFG_LIVE_DISABLE;
     this->data.live_quat = CFG_LIVE_ENABLE;
     this->data.live_euler = CFG_LIVE_ENABLE;
     this->data.live_gravity = CFG_LIVE_ENABLE;
@@ -157,6 +158,7 @@ uint8_t MvStorage::get_##VAR(void)      \
 
 MVSTORAGE_SET_GET(live_acc)
 MVSTORAGE_SET_GET(live_gyro)
+MVSTORAGE_SET_GET(live_mag)
 MVSTORAGE_SET_GET(live_quat)
 MVSTORAGE_SET_GET(live_euler)
 MVSTORAGE_SET_GET(live_gravity)

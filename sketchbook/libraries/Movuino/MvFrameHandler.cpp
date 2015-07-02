@@ -230,6 +230,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
 
                 case SENS_ACC_RAW:
                 case SENS_GYRO_RAW:
+                case SENS_MAG_RAW:
                     sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c X: %d Y: %d Z: %d",
                             ans->id,
                             ans->sub.sensor_data.type,
@@ -325,6 +326,7 @@ int MvFrameHandler::ans_frame_size(struct answer *ans)
             {
                 case SENS_ACC_RAW:
                 case SENS_GYRO_RAW:
+                case SENS_MAG_RAW:
                     size += sizeof(ans->sub.sensor_data.data.raw);
                     break;
                 case SENS_QUAT:

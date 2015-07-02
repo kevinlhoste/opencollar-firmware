@@ -170,6 +170,9 @@ void send_config(void)
     g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_GYRO_RAW_EN;
     g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_gyro();
     g_ctx.fhandler->write_frame(&g_ctx.frame);
+    g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_MAG_RAW_EN;
+    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_mag();
+    g_ctx.fhandler->write_frame(&g_ctx.frame);
 }
 
 void loop()
@@ -241,6 +244,7 @@ void loop()
                     case CFG_ID_LIVE_ALL_EN:
                         g_ctx.storage->set_live_acc(g_ctx.frame.cmd.sub.cfg.value);
                         g_ctx.storage->set_live_gyro(g_ctx.frame.cmd.sub.cfg.value);
+                        g_ctx.storage->set_live_mag(g_ctx.frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                     case CFG_ID_LIVE_ACC_RAW_EN:
                         g_ctx.storage->set_live_acc(g_ctx.frame.cmd.sub.cfg.value);
@@ -248,6 +252,10 @@ void loop()
                         break;
                     case CFG_ID_LIVE_GYRO_RAW_EN:
                         g_ctx.storage->set_live_gyro(g_ctx.frame.cmd.sub.cfg.value);
+                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
+                        break;
+                    case CFG_ID_LIVE_MAG_RAW_EN:
+                        g_ctx.storage->set_live_mag(g_ctx.frame.cmd.sub.cfg.value);
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                         break;
                     case CFG_ID_LIVE_QUATERNION_EN:
@@ -394,6 +402,13 @@ void loop()
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
                 g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_gyro();
+                send_live(&g_ctx.frame);
+            }
+            // Send raw mag data
+            if(g_ctx.storage->get_live_mag())
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_MAG_RAW;
+                g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_mag();
                 send_live(&g_ctx.frame);
             }
 

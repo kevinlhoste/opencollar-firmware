@@ -35,6 +35,8 @@ class MvAccGyro {
 
         static struct sensor_3_axes get_raw_gyro(void);
 
+        static struct sensor_3_axes get_raw_mag(void);
+
         static struct sensor_quaternion get_quat(void);
 
         static struct sensor_euler get_euler(void);
@@ -51,6 +53,7 @@ class MvAccGyro {
         static MPU6050 accelgyro;
         static sensor_3_axes acc;
         static sensor_3_axes gyro;
+        static sensor_3_axes mag;
         static struct dmp dmp;
         static sensor_quaternion quat;
         static sensor_euler euler;

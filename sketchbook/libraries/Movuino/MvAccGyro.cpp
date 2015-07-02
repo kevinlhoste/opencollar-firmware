@@ -3,6 +3,7 @@
 MPU6050 MvAccGyro::accelgyro;
 sensor_3_axes MvAccGyro::acc;
 sensor_3_axes MvAccGyro::gyro;
+sensor_3_axes MvAccGyro::mag;
 sensor_quaternion MvAccGyro::quat;
 sensor_euler MvAccGyro::euler;
 sensor_gravity MvAccGyro::gravity;
@@ -102,6 +103,11 @@ int MvAccGyro::open(void)
     // Initialize the sensor
     MvAccGyro::accelgyro.initialize();
 
+    // Setup the magnetometer
+    // TODO: check if we really need these lines
+    MvAccGyro::accelgyro.setI2CBypassEnabled(true);
+    delay(100);
+
     // TODO: test the connection
     // Test the connection
     //if(MvAccGyro::accelgyro.testConnection())
@@ -160,7 +166,13 @@ int MvAccGyro::read(void)
     // TODO: just read the right data if required
 
     // read raw accel/gyro measurements from device
-    MvAccGyro::accelgyro.getMotion6(&MvAccGyro::acc.x, &MvAccGyro::acc.y, &MvAccGyro::acc.z, &MvAccGyro::gyro.x, &MvAccGyro::gyro.y, &MvAccGyro::gyro.z);
+    if (!MvAccGyro::accelgyro.checkMag())
+        MvAccGyro::accelgyro.getMotion6(&MvAccGyro::acc.x, &MvAccGyro::acc.y, &MvAccGyro::acc.z,
+                                        &MvAccGyro::gyro.x, &MvAccGyro::gyro.y, &MvAccGyro::gyro.z);
+    else
+        MvAccGyro::accelgyro.getMotion9(&MvAccGyro::acc.x, &MvAccGyro::acc.y, &MvAccGyro::acc.z,
+                                        &MvAccGyro::gyro.x, &MvAccGyro::gyro.y, &MvAccGyro::gyro.z,
+                                        &MvAccGyro::mag.x, &MvAccGyro::mag.y, &MvAccGyro::mag.z);
 
     // read quaternions/euler/gravity
     MvAccGyro::accelgyro_dmp_data_get();
@@ -203,6 +215,11 @@ struct sensor_3_axes MvAccGyro::get_raw_acc(void)
 struct sensor_3_axes MvAccGyro::get_raw_gyro(void)
 {
     return MvAccGyro::gyro;
+}
+
+struct sensor_3_axes MvAccGyro::get_raw_mag(void)
+{
+    return MvAccGyro::mag;
 }
 
 struct sensor_quaternion MvAccGyro::get_quat(void)

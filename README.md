@@ -118,6 +118,15 @@ The < value > can be:
  * 0 // disable
  * 1 // enable
 
+**Enable raw magnetometer at live mode**
+
+
+    c m < value >
+
+The < value > can be:
+ * 0 // disable
+ * 1 // enable
+
 **Enable all live modes**
 
 
@@ -151,6 +160,7 @@ The tags:
 * **SENS:** the sensor where the data cames from
  * a - accelerometer
  * g - gyroscope
+ * m - magnetometer
  * q - quaternion
  * e - euler
  * y - gravity

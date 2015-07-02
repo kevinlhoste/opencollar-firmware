@@ -56,6 +56,8 @@ enum cfg_id {
     CFG_ID_LIVE_ACC_RAW_EN = 'a',
     /** enable raw gyroscope at live mode */
     CFG_ID_LIVE_GYRO_RAW_EN = 'g',
+    /** enable raw magnetometer at live mode */
+    CFG_ID_LIVE_MAG_RAW_EN = 'm',
     /** enable quaternion at live mode */
     CFG_ID_LIVE_QUATERNION_EN = 'q',
     /** enable euler at live mode */
@@ -208,6 +210,8 @@ enum sensor_type {
     SENS_ACC_RAW = 'a',
     /** raw gyroscope */
     SENS_GYRO_RAW = 'g',
+    /** raw magnetometer */
+    SENS_MAG_RAW = 'm',
     /** quaternion */
     SENS_QUAT = 'q',
     /** euler */
