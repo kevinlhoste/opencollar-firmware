@@ -61,7 +61,7 @@ void setup()
     {
         g_ctx.storage->reset();
     }
-    g_ctx.live_ctl.period = 1000000/g_ctx.storage->get_sampling_rate();
+    g_ctx.live_ctl.period = 1000000/g_ctx.storage->get_cfg(CFG_ID_SAMPLING_RATE);
     g_ctx.button = 0;
 }
 
@@ -99,13 +99,6 @@ bool check_live_time(unsigned long time_stamp, unsigned long period)
         return true;
     }
     return false;
-}
-
-
-void set_live_sampling_rate(unsigned int hz)
-{
-    g_ctx.live_ctl.period = 1000000/hz;
-    g_ctx.storage->set_sampling_rate(hz);
 }
 
 void add_com_to_live_list(MvCom *com)
@@ -174,26 +167,17 @@ void send_live(struct frame *frame)
 
 void send_config(void)
 {
+    unsigned int i;
+
     g_ctx.frame.answer.id = ANS_ID_CONFIG_GET;
 
-    g_ctx.frame.answer.sub.cfg.id = CFG_ID_ACC_SENS;
-    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_acc_sens();
-    g_ctx.fhandler->write_frame(&g_ctx.frame);
-    g_ctx.frame.answer.sub.cfg.id = CFG_ID_GYRO_SENS;
-    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_gyro_sens();
-    g_ctx.fhandler->write_frame(&g_ctx.frame);
-    g_ctx.frame.answer.sub.cfg.id = CFG_ID_SAMPLING_RATE;
-    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_sampling_rate();
-    g_ctx.fhandler->write_frame(&g_ctx.frame);
-    g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_ACC_RAW_EN;
-    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_acc();
-    g_ctx.fhandler->write_frame(&g_ctx.frame);
-    g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_GYRO_RAW_EN;
-    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_gyro();
-    g_ctx.fhandler->write_frame(&g_ctx.frame);
-    g_ctx.frame.answer.sub.cfg.id = CFG_ID_LIVE_MAG_RAW_EN;
-    g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_live_mag();
-    g_ctx.fhandler->write_frame(&g_ctx.frame);
+    for (i = 0; i < CFG_ID_LIST_SIZE; i++)
+    {
+        g_ctx.frame.answer.sub.cfg.id = cfg_id_list[i].id;
+        g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_cfg(cfg_id_list[i].id);
+        g_ctx.fhandler->write_frame(&g_ctx.frame);
+    
+    }
 }
 
 void loop()
@@ -257,48 +241,28 @@ void loop()
                 break;
 
             case CMD_CONFIG_SET:
+                ans_err = 0;
+
+                // Change configuration on the accgyro sensor
                 switch(g_ctx.frame.cmd.sub.cfg.id)
                 {
-                    // TODO: in the real app, write the config into flash and change
                     case CFG_ID_ACC_SENS:
                         ans_err = MvAccGyro::set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
-                        if(!ans_err)
-                        g_ctx.storage->set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
                         break;
                     case CFG_ID_GYRO_SENS:
                         ans_err = MvAccGyro::set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
-                        g_ctx.storage->set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
                         break;
-
                     case CFG_ID_SAMPLING_RATE:
-                        set_live_sampling_rate(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
-                        break;
-
-                    case CFG_ID_LIVE_ALL_EN:
-                        g_ctx.storage->set_live_acc(g_ctx.frame.cmd.sub.cfg.value);
-                        g_ctx.storage->set_live_gyro(g_ctx.frame.cmd.sub.cfg.value);
-                        g_ctx.storage->set_live_mag(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
-                    case CFG_ID_LIVE_ACC_RAW_EN:
-                        g_ctx.storage->set_live_acc(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
-                        break;
-                    case CFG_ID_LIVE_GYRO_RAW_EN:
-                        g_ctx.storage->set_live_gyro(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
-                        break;
-                    case CFG_ID_LIVE_MAG_RAW_EN:
-                        g_ctx.storage->set_live_mag(g_ctx.frame.cmd.sub.cfg.value);
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
-                        break;
-                    case CFG_ID_LIVE_QUATERNION_EN:
-                    default:
-                        send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CFG);
+                        g_ctx.live_ctl.period = 1000000/g_ctx.frame.cmd.sub.cfg.value;
                         break;
                 }
+
+                // Change the config on the flash
+                if (!ans_err)
+                    ans_err = g_ctx.storage->set_cfg((enum cfg_id)g_ctx.frame.cmd.sub.cfg.id, g_ctx.frame.cmd.sub.cfg.value);
+
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
+
                 break;
 
             case CMD_SWITCH_MODE:
@@ -377,8 +341,8 @@ void loop()
                 g_ctx.frame.answer.sub.version[2] = g_ctx.version[2];
                 g_ctx.fhandler->write_frame(&g_ctx.frame);
                 break;
-            case CMD_HELP:
             default:
+                Serial.println("Couldn't find cmd");
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CMD);
                 break;
         }
@@ -419,21 +383,21 @@ void loop()
             // one of them are enabled
 
             // Send raw acc data
-            if(g_ctx.storage->get_live_acc())
+            if(g_ctx.storage->get_cfg(CFG_ID_LIVE_ACC_RAW_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
                 g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_acc();
                 send_live(&g_ctx.frame);
             }
             // Send raw gyro data
-            if(g_ctx.storage->get_live_gyro())
+            if(g_ctx.storage->get_cfg(CFG_ID_LIVE_GYRO_RAW_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
                 g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_gyro();
                 send_live(&g_ctx.frame);
             }
             // Send raw mag data
-            if(g_ctx.storage->get_live_mag())
+            if(g_ctx.storage->get_cfg(CFG_ID_LIVE_MAG_RAW_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_MAG_RAW;
                 g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_mag();
@@ -442,7 +406,7 @@ void loop()
 
 #ifdef MV_ACC_GYRO_DMP_EN
             // Send quat data
-            if(g_ctx.storage->get_live_quat())
+            if(g_ctx.storage->get_cfg(CFG_ID_LIVE_QUATERNION_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_QUAT;
                 g_ctx.frame.answer.sub.sensor_data.data.quat = MvAccGyro::get_quat();

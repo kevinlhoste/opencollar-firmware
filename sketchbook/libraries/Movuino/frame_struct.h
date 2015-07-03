@@ -25,8 +25,6 @@ enum cmd_id {
     CMD_REC_PLAY = '>',
     /** ask movuino to clear the records in memory */
     CMD_REC_CLEAR = '<',
-    /** ask for a command list */
-    CMD_HELP = 'h',
     /** ask for the movuino version */
     CMD_VERSION_GET = 'V',
     /** ask to configure a movuino parameter */
@@ -60,9 +58,21 @@ enum cfg_id {
     CFG_ID_LIVE_MAG_RAW_EN = 'm',
     /** enable quaternion at live mode */
     CFG_ID_LIVE_QUATERNION_EN = 'q',
-    /** enable all live modes */
-    CFG_ID_LIVE_ALL_EN = 'l'
 };
+// NOTE: update this value when changing the cfg_id
+#ifdef MV_ACC_GYRO_DMP_EN
+    #define CFG_ID_LIST_SIZE 7
+#else
+    #define CFG_ID_LIST_SIZE 6
+#endif
+
+struct cfg_default
+{
+    enum cfg_id id;
+    uint8_t default_val;
+};
+extern const struct cfg_default cfg_id_list[CFG_ID_LIST_SIZE];
+int cfg_id_get_index(enum cfg_id id);
 
 /**
  * cfg_live

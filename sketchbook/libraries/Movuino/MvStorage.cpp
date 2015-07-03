@@ -67,13 +67,12 @@ int MvStorage::status(void)
  */
 void MvStorage::soft_reset(void)
 {
-    this->data.live_acc = CFG_LIVE_ENABLE;
-    this->data.live_gyro = CFG_LIVE_ENABLE;
-    this->data.live_mag = CFG_LIVE_DISABLE;
-    this->data.live_quat = CFG_LIVE_ENABLE;
-    this->data.acc_sens = CFG_ACC_SENS_4G;
-    this->data.gyro_sens = CFG_GYRO_SENS_500DS;
-    this->data.sampling_rate = 10;
+    unsigned int i;
+
+    for (i = 0; i < CFG_ID_LIST_SIZE; i++)
+    {
+        this->data.value[i] = cfg_id_list[i].default_val;
+    }
 }
 
 /**
@@ -141,26 +140,22 @@ int MvStorage::reset(void)
     return 0;
 }
 
-/* declaration of the setters and getters */
-#define MVSTORAGE_SET_GET(VAR)          \
-int MvStorage::set_##VAR(uint8_t value) \
-{                                       \
-    this->data.VAR = value;             \
-    return this->write_storage_data();  \
-}                                       \
-                                        \
-uint8_t MvStorage::get_##VAR(void)      \
-{                                       \
-    return this->data.VAR;              \
+int MvStorage::set_cfg(enum cfg_id id, uint8_t value)
+{
+    int index = cfg_id_get_index(id); 
+    if (index < 0)
+        return index;
+    this->data.value[index] = value;
+    return this->write_storage_data();
 }
 
-MVSTORAGE_SET_GET(live_acc)
-MVSTORAGE_SET_GET(live_gyro)
-MVSTORAGE_SET_GET(live_mag)
-MVSTORAGE_SET_GET(live_quat)
-MVSTORAGE_SET_GET(acc_sens)
-MVSTORAGE_SET_GET(gyro_sens)
-MVSTORAGE_SET_GET(sampling_rate)
+uint8_t MvStorage::get_cfg(enum cfg_id id)
+{
+    int index = cfg_id_get_index(id); 
+    if (index < 0)
+        return index;
+    return this->data.value[index];
+}
 
 /**
  * rewind

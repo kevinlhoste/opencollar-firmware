@@ -6,7 +6,7 @@
 #include "frame_struct.h"
 #include "MvCom.h"
 
-#define INIT_KEY 0x2233
+#define INIT_KEY 0xca5a
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 100
 
@@ -19,14 +19,7 @@ struct storage_data
 {
     /** Used to verify if the memory has been initialized or if it is usable */
     uint16_t init_key;
-    uint8_t
-        live_acc,
-        live_gyro,
-        live_mag,
-        live_quat,
-        acc_sens,
-        gyro_sens, 
-        sampling_rate;
+    uint8_t value[CFG_ID_LIST_SIZE];
 };
 
 /**
@@ -49,22 +42,8 @@ class MvStorage : public MvCom
         /* Storage methods */
         int status(void);
         int reset(void);
-        int set_live_acc(uint8_t value);
-        int set_live_gyro(uint8_t value);
-        int set_live_mag(uint8_t value);
-        int set_live_quat(uint8_t value);
-        int set_live_gravity(uint8_t value);
-        int set_acc_sens(uint8_t value);
-        int set_gyro_sens(uint8_t value);
-        int set_sampling_rate(uint8_t value);
-        uint8_t get_live_acc(void);
-        uint8_t get_live_gyro(void);
-        uint8_t get_live_mag(void);
-        uint8_t get_live_quat(void);
-        uint8_t get_live_gravity(void);
-        uint8_t get_acc_sens(void);
-        uint8_t get_gyro_sens(void);
-        uint8_t get_sampling_rate(void);
+        int set_cfg(enum cfg_id id, uint8_t value);
+        uint8_t get_cfg(enum cfg_id id);
         void rewind(void);
         void clear_recordings(void);
     private:

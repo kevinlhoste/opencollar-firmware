@@ -127,14 +127,6 @@ The < value > can be:
  * 0 // disable
  * 1 // enable
 
-**Enable all live modes**
-
-
-    c l < value >
-
-The < value > can be:
- * 0 // disable all
- * 1 // enable all
 
 ## Responses list
 
