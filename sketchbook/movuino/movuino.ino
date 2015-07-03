@@ -12,6 +12,10 @@
 #include "MvStorage.h"
 #include "SerialMvCom.h"
 
+#define BUTTON_PIN 8
+#define BUTTON_STATE digitalRead(BUTTON_PIN)
+#define WRITE_LED 4
+
 struct app_context
 {
     struct live_ctl
@@ -27,12 +31,16 @@ struct app_context
     struct frame frame;
     MvStorage *storage;
     uint8_t version[3] = {0, 0, 1};
+    char button;
 } g_ctx;
 
 void setup()
 {
     int i;
     MvCom *com[2];
+
+    pinMode(BUTTON_PIN, INPUT);
+    pinMode(WRITE_LED, OUTPUT);
 
     g_ctx.live_ctl.ref = 0;
     g_ctx.live_ctl.time_stamp = 0;
@@ -54,6 +62,7 @@ void setup()
         g_ctx.storage->reset();
     }
     g_ctx.live_ctl.period = 1000000/g_ctx.storage->get_sampling_rate();
+    g_ctx.button = 0;
 }
 
 void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans_err)
@@ -137,6 +146,18 @@ void remove_com_from_live_list(MvCom *com)
     }
 }
 
+void start_rec(void)
+{
+    MvCom *aux_com;
+    g_ctx.storage->rewind();
+    aux_com = g_ctx.frame.com;
+    g_ctx.frame.com = g_ctx.storage;
+    send_config();
+    g_ctx.frame.com = aux_com;
+    add_com_to_live_list(g_ctx.storage);
+    digitalWrite(WRITE_LED,1);
+}
+
 void send_live(struct frame *frame)
 {
     int i;
@@ -179,6 +200,21 @@ void loop()
 {
     int ans_err = ANS_NACK_UNKNOWN_CMD;
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
+
+    /* check button state */
+    if(g_ctx.button != BUTTON_STATE)
+    {
+        g_ctx.button = BUTTON_STATE;
+        if(g_ctx.button)
+        {
+            start_rec();
+        }
+        else
+        {
+            remove_com_from_live_list(g_ctx.storage);
+            digitalWrite(WRITE_LED,0);
+        }
+    }
 
     if (SUCCESS_FRAME_READ == read_err)
     {
@@ -282,14 +318,7 @@ void loop()
                  }
                  else
                  {
-                    MvCom *aux_com;
-                    g_ctx.storage->rewind();
-                    /* TODO: Write the configuration frame */
-                    aux_com = g_ctx.frame.com;
-                    g_ctx.frame.com = g_ctx.storage;
-                    send_config();
-                    g_ctx.frame.com = aux_com;
-                    add_com_to_live_list(g_ctx.storage);
+                    start_rec();
                     send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                  }
                  break;
@@ -300,8 +329,9 @@ void loop()
                 }
                 else
                 {
-                   remove_com_from_live_list(g_ctx.storage);
-                   send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
+                    remove_com_from_live_list(g_ctx.storage);
+                    digitalWrite(WRITE_LED,0);
+                    send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 }
                 break;
             case CMD_REC_PLAY:
