@@ -295,8 +295,6 @@ void loop()
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                         break;
                     case CFG_ID_LIVE_QUATERNION_EN:
-                    case CFG_ID_LIVE_EULER_EN:
-                    case CFG_ID_LIVE_GRAVITY_EN:
                     default:
                         send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CFG);
                         break;
@@ -450,27 +448,6 @@ void loop()
                 g_ctx.frame.answer.sub.sensor_data.data.quat = MvAccGyro::get_quat();
                 send_live(&g_ctx.frame);
             }
-
-#ifdef MV_ACC_GYRO_DMP_EULER_EN
-            // Send euler data
-            if(g_ctx.storage->get_live_euler())
-            {
-                g_ctx.frame.answer.sub.sensor_data.type = SENS_EULER;
-                g_ctx.frame.answer.sub.sensor_data.data.euler = MvAccGyro::get_euler();
-                send_live(&g_ctx.frame);
-            }
-#endif //#ifdef MV_ACC_GYRO_DMP_EULER_EN
-
-#ifdef MV_ACC_GYRO_DMP_GRAV_EN
-            // Send gravity data
-            if(g_ctx.storage->get_live_gravity())
-            {
-                g_ctx.frame.answer.sub.sensor_data.type = SENS_GRAVITY;
-                g_ctx.frame.answer.sub.sensor_data.data.gravity = MvAccGyro::get_gravity();
-                send_live(&g_ctx.frame);
-            }
-
-#endif //#ifdef MV_ACC_GYRO_DMP_GRAV_EN
 
 #endif //#ifdef MV_ACC_GYRO_DMP_EN
 

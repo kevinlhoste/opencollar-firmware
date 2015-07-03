@@ -46,18 +46,20 @@ class MvAccGyro {
     private:
         // This class shouldn't be instatiated
         MvAccGyro(void);
-        static void dmpDataReady(void);
-        static void accelgyro_dmp_setup(void);
-        static void accelgyro_dmp_data_get(void);
 
         static MPU6050 accelgyro;
         static sensor_3_axes acc;
         static sensor_3_axes gyro;
         static sensor_3_axes mag;
+
+#ifdef MV_ACC_GYRO_DMP_EN
+        static void dmpDataReady(void);
+        static void accelgyro_dmp_setup(void);
+        static void accelgyro_dmp_data_get(void);
+
         static struct dmp dmp;
         static sensor_quaternion quat;
-        static sensor_euler euler;
-        static sensor_gravity gravity;
+#endif //#ifdev MV_ACC_GYRO_DMP_EN
 };
 
 #endif /* _MV_ACC_GYRO_H */

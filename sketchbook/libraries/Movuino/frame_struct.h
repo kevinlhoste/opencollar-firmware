@@ -60,10 +60,6 @@ enum cfg_id {
     CFG_ID_LIVE_MAG_RAW_EN = 'm',
     /** enable quaternion at live mode */
     CFG_ID_LIVE_QUATERNION_EN = 'q',
-    /** enable euler at live mode */
-    CFG_ID_LIVE_EULER_EN = 'e',
-    /** enable gravity vector at live mode */
-    CFG_ID_LIVE_GRAVITY_EN = 'y',
     /** enable all live modes */
     CFG_ID_LIVE_ALL_EN = 'l'
 };
@@ -214,10 +210,6 @@ enum sensor_type {
     SENS_MAG_RAW = 'm',
     /** quaternion */
     SENS_QUAT = 'q',
-    /** euler */
-    SENS_EULER = 'e',
-    /** gravity vector */
-    SENS_GRAVITY = 'y'
 };
 
 /**
@@ -249,34 +241,6 @@ struct sensor_quaternion {
 };
 
 /**
- * sensor_euler
- *
- * data from the euler modeling of the sensor data
- * @see struct sensor_data
- */
-struct sensor_euler {
-    // TODO: check how to serialize this
-    float
-        psi,
-        theta,
-        phi;
-};
-
-/**
- * sensor_gravity
- *
- * data from the gravity vector modelation of the sensor data
- * @see struct sensor_data
- */
-struct sensor_gravity {
-    float
-    // TODO: check how to serialize this
-        yaw,
-        pitch,
-        roll;
-};
-
-/**
  * sensor_data
  *
  * data extracted from the sensor
@@ -286,8 +250,6 @@ struct sensor_data {
     union {
         struct sensor_3_axes raw;
         struct sensor_quaternion quat;
-        struct sensor_euler euler;
-        struct sensor_gravity gravity;
     } data;
 };
 

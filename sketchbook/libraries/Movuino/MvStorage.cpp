@@ -71,8 +71,6 @@ void MvStorage::soft_reset(void)
     this->data.live_gyro = CFG_LIVE_ENABLE;
     this->data.live_mag = CFG_LIVE_DISABLE;
     this->data.live_quat = CFG_LIVE_ENABLE;
-    this->data.live_euler = CFG_LIVE_ENABLE;
-    this->data.live_gravity = CFG_LIVE_ENABLE;
     this->data.acc_sens = CFG_ACC_SENS_4G;
     this->data.gyro_sens = CFG_GYRO_SENS_500DS;
     this->data.sampling_rate = 10;
@@ -160,8 +158,6 @@ MVSTORAGE_SET_GET(live_acc)
 MVSTORAGE_SET_GET(live_gyro)
 MVSTORAGE_SET_GET(live_mag)
 MVSTORAGE_SET_GET(live_quat)
-MVSTORAGE_SET_GET(live_euler)
-MVSTORAGE_SET_GET(live_gravity)
 MVSTORAGE_SET_GET(acc_sens)
 MVSTORAGE_SET_GET(gyro_sens)
 MVSTORAGE_SET_GET(sampling_rate)

@@ -254,34 +254,6 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                             float_str[2],
                             float_str[3]);
                     goto ret;
-
-                case SENS_EULER:
-                    // Float to string
-                    dtostrf(ans->sub.sensor_data.data.euler.psi,     1, 2, float_str[0]);
-                    dtostrf(ans->sub.sensor_data.data.euler.theta,   1, 2, float_str[1]);
-                    dtostrf(ans->sub.sensor_data.data.euler.phi,     1, 2, float_str[2]);
-
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c PSI: %s THETA: %s PHI: %s",
-                            ans->id,
-                            ans->sub.sensor_data.type,
-                            float_str[0],
-                            float_str[1],
-                            float_str[2]);
-                    goto ret;
-
-                case SENS_GRAVITY:
-                    // Float to string
-                    dtostrf(ans->sub.sensor_data.data.gravity.yaw,     1, 2, float_str[0]);
-                    dtostrf(ans->sub.sensor_data.data.gravity.pitch,   1, 2, float_str[1]);
-                    dtostrf(ans->sub.sensor_data.data.gravity.roll,    1, 2, float_str[2]);
-
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c YAW: %s PITCH: %s ROLL: %s",
-                            ans->id,
-                            ans->sub.sensor_data.type,
-                            float_str[0],
-                            float_str[1],
-                            float_str[2]);
-                    goto ret;
             }
     }
 
@@ -331,12 +303,6 @@ int MvFrameHandler::ans_frame_size(struct answer *ans)
                     break;
                 case SENS_QUAT:
                     size += sizeof(ans->sub.sensor_data.data.quat);
-                    break;
-                case SENS_EULER:
-                    size += sizeof(ans->sub.sensor_data.data.euler);
-                    break;
-                case SENS_GRAVITY:
-                    size += sizeof(ans->sub.sensor_data.data.gravity);
                     break;
             }
             break;

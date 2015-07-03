@@ -4,12 +4,11 @@ MPU6050 MvAccGyro::accelgyro;
 sensor_3_axes MvAccGyro::acc;
 sensor_3_axes MvAccGyro::gyro;
 sensor_3_axes MvAccGyro::mag;
-sensor_quaternion MvAccGyro::quat;
-sensor_euler MvAccGyro::euler;
-sensor_gravity MvAccGyro::gravity;
-struct dmp MvAccGyro::dmp;
 
 #ifdef MV_ACC_GYRO_DMP_EN
+struct dmp MvAccGyro::dmp;
+sensor_quaternion MvAccGyro::quat;
+
 void MvAccGyro::dmpDataReady(void)
 {
     MvAccGyro::dmp.mpuInterrupt = true;
@@ -46,9 +45,8 @@ void MvAccGyro::accelgyro_dmp_setup(void)
         // 1 = initial memory load failed
         // 2 = DMP configuration updates failed
         // (if it's going to break, usually the code will be 1)
-        Serial.print(F("DMP Initialization failed (code "));
-        Serial.print(MvAccGyro::dmp.devStatus);
-        Serial.println(F(")"));
+        Serial.print("DMP Init failed:");
+        Serial.println(MvAccGyro::dmp.devStatus);
         // Block
         while(1);
     }
@@ -89,10 +87,6 @@ void MvAccGyro::accelgyro_dmp_data_get(void)
         MvAccGyro::accelgyro.dmpGetQuaternion(&MvAccGyro::dmp.q, MvAccGyro::dmp.fifoBuffer);
     }
 }
-#else
-void MvAccGyro::dmpDataReady(void){}
-void MvAccGyro::accelgyro_dmp_setup(void){}
-void MvAccGyro::accelgyro_dmp_data_get(void){}
 #endif // #ifdef MV_ACC_GYRO_DMP_EN
 
 int MvAccGyro::open(void)
@@ -113,8 +107,9 @@ int MvAccGyro::open(void)
     //if(MvAccGyro::accelgyro.testConnection())
     //    return ANS_NACK_UNKNOWN_ERR;
 
-    // TODO The dmp shoul be initialized only if quaternion, euler or gravity are set
+#ifdef MV_ACC_GYRO_DMP_EN
     MvAccGyro::accelgyro_dmp_setup();
+#endif
 
     return 0;
 }
@@ -174,7 +169,8 @@ int MvAccGyro::read(void)
                                         &MvAccGyro::gyro.x, &MvAccGyro::gyro.y, &MvAccGyro::gyro.z,
                                         &MvAccGyro::mag.x, &MvAccGyro::mag.y, &MvAccGyro::mag.z);
 
-    // read quaternions/euler/gravity
+#ifdef MV_ACC_GYRO_DMP_EN
+    // read quaternions
     MvAccGyro::accelgyro_dmp_data_get();
 
     // Do the math to fill the internal variables
@@ -185,24 +181,7 @@ int MvAccGyro::read(void)
     MvAccGyro::quat.y = MvAccGyro::dmp.q.y;
     MvAccGyro::quat.z = MvAccGyro::dmp.q.z;
 
-    // Euler
-    float ftemp[3];
-#ifdef MV_ACC_GYRO_DMP_EULER_EN
-    MvAccGyro::accelgyro.dmpGetEuler(ftemp, &MvAccGyro::dmp.q);
-    MvAccGyro::euler.psi =      ftemp[0] * 180/M_PI;
-    MvAccGyro::euler.theta =    ftemp[1] * 180/M_PI;
-    MvAccGyro::euler.phi =      ftemp[2] * 180/M_PI;
-#endif //#ifdef MV_ACC_GYRO_DMP_EULER_EN
-
-#ifdef MV_ACC_GYRO_DMP_GRAV_EN
-    // Gravity
-    VectorFloat gravity;
-    MvAccGyro::accelgyro.dmpGetGravity(&gravity, &MvAccGyro::dmp.q);
-    MvAccGyro::accelgyro.dmpGetYawPitchRoll(ftemp, &MvAccGyro::dmp.q, &gravity);
-    MvAccGyro::gravity.yaw      = ftemp[0] * 180/M_PI;
-    MvAccGyro::gravity.pitch    = ftemp[1] * 180/M_PI;
-    MvAccGyro::gravity.roll     = ftemp[2] * 180/M_PI;
-#endif //#ifdef MV_ACC_GYRO_DMP_GRAV_EN
+#endif //#ifdev MV_ACC_GYRO_DMP_EN
 
     return 0;
 }
@@ -222,17 +201,10 @@ struct sensor_3_axes MvAccGyro::get_raw_mag(void)
     return MvAccGyro::mag;
 }
 
+#ifdef MV_ACC_GYRO_DMP_EN
 struct sensor_quaternion MvAccGyro::get_quat(void)
 {
     return MvAccGyro::quat;
 }
 
-struct sensor_euler MvAccGyro::get_euler(void)
-{
-    return MvAccGyro::euler;
-}
-
-struct sensor_gravity MvAccGyro::get_gravity(void)
-{
-    return MvAccGyro::gravity;
-}
+#endif //#ifdev MV_ACC_GYRO_DMP_EN
