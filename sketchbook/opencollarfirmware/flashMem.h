@@ -12,13 +12,33 @@
 
 char itoa_buff[20];
 
-void 
+void
 divide_int_print(int16_t value)
 {
   serial_print_char(value&255);
-  //serial_print_char(' ');
   serial_print_char((value >> 8)&255);
-  //serial_print_char(' ');
+}
+
+void
+divide_uint32_print(uint32_t value)
+{
+  serial_print_char(value&255);
+  serial_print_char((value >> 8)&255);
+  serial_print_char((value >> 16)&255);
+  serial_print_char((value >> 24)&255);
+
+}
+
+void print_altimeter(int mode)
+{
+	if (mode == CHAR_MODE)
+	{
+		serial_print_uint32(pressure);
+		serial_print_char(' ');
+	} else if (mode == BYTE_MODE)
+	{
+		divide_uint32_print(pressure);
+	}
 }
 
 void
@@ -48,9 +68,8 @@ print_accelgyro(int mode)
           serial_print_str(itoa(accelgyro.my,itoa_buff,10));
           serial_print_char(' ');
           serial_print_str(itoa(accelgyro.mz,itoa_buff,10));
-          
+
         }
-        serial_print_char('\n');
     }
     else if(mode == BYTE_MODE)
     {
@@ -69,9 +88,16 @@ print_accelgyro(int mode)
           divide_int_print(0);
           divide_int_print(0);
         }
-        serial_print_char('\n');
     }
 }
+
+void print_all(int mode)
+{
+	print_altimeter(mode);
+	print_accelgyro(mode);
+	serial_print_char('\n');
+}
+
 
 void
 print_accelgyro_quaternions(int mode)
@@ -165,7 +191,7 @@ flash_read_meta_data(void)
     flashMem.acce_scale = SPI.transfer(0xff);
     flashMem.gyro_scale = SPI.transfer(0xff);
     flashMem.enabled_sensors = SPI.transfer(0xff);
-    
+
     if(synch_value != FLASH_SYNC)
         return 1;
     else return 0;
@@ -191,7 +217,7 @@ flash_read_config(char *acce_scale, char *gyro_scale, int *sampling, char *enabl
 int
 flash_setup(void)
 {
-    int16_t synch_value; 
+    int16_t synch_value;
     //Start SPI for the external flash
     SPI.begin();
     flashMem.dataflash.setup(5,6,7);
@@ -232,15 +258,17 @@ flash_write_buffer(void)
 {
     flashMem.dataflash.bufferToPage(0,flashMem.page);
     flashMem.page++;
-    flashMem.n += (flashMem.offset/12);
+    flashMem.n += (flashMem.offset/16);
     flashMem.offset = 0;
     flash_write_meta_data();
     flashMem.dataflash.bufferWrite(0,0);
 }
 
 void
-flash_write_accelgyro(void)
+flash_write_all(void)
 {
+    uint16_t p_tmp1, p_tmp2;
+
     //print_accelgyro(0);
     FLASH_WRITE_INT16(accelgyro.ax);
     FLASH_WRITE_INT16(accelgyro.ay);
@@ -248,23 +276,37 @@ flash_write_accelgyro(void)
     FLASH_WRITE_INT16(accelgyro.gx);
     FLASH_WRITE_INT16(accelgyro.gy);
     FLASH_WRITE_INT16(accelgyro.gz);
-    flashMem.offset += 12;
+
+    p_tmp1 = pressure & 0xFFFF;
+    p_tmp2 = (pressure >> 16) & 0xFFFF;
+
+    FLASH_WRITE_INT16(p_tmp1);
+    FLASH_WRITE_INT16(p_tmp2);
+
+    flashMem.offset += 16;
     if(flashMem.offset == 528) flash_write_buffer(); 
 }
 
 void
-read_accelgyro(void)
+read_all(void)
 {
+    uint16_t p_tmp1, p_tmp2;
+
     FLASH_READ_INT16(accelgyro.ax);
     FLASH_READ_INT16(accelgyro.ay);
     FLASH_READ_INT16(accelgyro.az);
     FLASH_READ_INT16(accelgyro.gx);
     FLASH_READ_INT16(accelgyro.gy);
     FLASH_READ_INT16(accelgyro.gz);
+    FLASH_READ_INT16(p_tmp1);
+    FLASH_READ_INT16(p_tmp2);
+    pressure = p_tmp2;
+    pressure = pressure << 16;
+    pressure = pressure | p_tmp1;
 }
 
 void
-flash_read_accelgyro(int mode)
+flash_read_all(int mode)
 {
     if(flash_read_meta_data())
         { Serial.println("M corrupted memory"); return; }
@@ -276,35 +318,35 @@ flash_read_accelgyro(int mode)
     serial_print_char(' ');
     serial_println_int(flashMem.sampling);
     int i, j;
-    flashMem.page = (flashMem.n*12)/528;
+    flashMem.page = (flashMem.n*16)/528;
 
     //start from page 1 because page 0 is used to store variables
     for(i = 1; i <= flashMem.page; i++)
     {
         flashMem.dataflash.pageToBuffer(i,0);
         flashMem.dataflash.bufferRead(0,0);
-        for(j = 0; j < 528; j+=12)
+        for(j = 0; j < 528; j+=16)
         {
-            read_accelgyro();
+            read_all();
             if(mode == CHAR_MODE)
               serial_print_str("r ");
             else
               serial_print_str("R ");
-            print_accelgyro(mode);
+	    print_all(mode);
             if(used_serial)delay(30);
         }
     }
     flashMem.dataflash.pageToBuffer(i,0);
     flashMem.dataflash.bufferRead(0,0);
-    j = (flashMem.n*12)%528;
-    for(i = 1; i < j; i+=12)
+    j = (flashMem.n*16)%528;
+    for(i = 1; i < j; i+=16)
     {
         if(mode == CHAR_MODE)
           serial_print_str("r ");
         else
           serial_print_str("R ");
-        read_accelgyro();
-        print_accelgyro(mode);
+        read_all();
+        print_all(mode);
         delay(10);
     }
 }

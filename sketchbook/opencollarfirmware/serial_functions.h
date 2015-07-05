@@ -45,6 +45,13 @@ serial_println_int(long int value)
 }
 
 void
+serial_print_uint32(uint32_t value)
+{
+  if(used_serial) Serial1.print(value);
+  else Serial.print(value);
+}
+
+void
 serial_print_str(char *value)
 {
   if(used_serial) Serial1.print(value);

@@ -1,5 +1,3 @@
-
-
 /* ============================================
 I2Cdev device library code is placed under the MIT license
 Copyright (c) 2011 Jeff Rowberg
@@ -40,6 +38,7 @@ THE SOFTWARE.
 
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "accelgyro.h"
+#include "altimeter.h"
 #include "flashMem.h"
 #include "serial_frame.h"
 
@@ -79,13 +78,18 @@ setup(void)
     pinMode(8, INPUT);
     
     button = 0;
+
     sf_setup();
+    //Join I2C
+    Wire.begin();
     accelgyro_setup();
+    altimeter_setup();
     // TODO: this setup shouldn't be done here
     //accelgyro_quaternion_setup();
     
     startupDelay();
     
+
    if(flash_setup())
     {
         flashMem.gyro_scale = GYRO_500;
@@ -131,15 +135,16 @@ mode_handler(void)
     {
         time0 = micros();
         accelgyro_get();
+	altimeter_get();
         switch(run_mode)
         {
             case LIVE_MODE:
                 serial_print_str("L ");
-                print_accelgyro(BYTE_MODE);
+                print_all(BYTE_MODE);
                 break;
             case LIVE_SERIAL_MODE:
                 serial_print_str("l ");
-                print_accelgyro(CHAR_MODE);
+                print_all(CHAR_MODE);
                 break;
             case WRITE_MODE:
                 if(!is_write_mode)
@@ -148,7 +153,7 @@ mode_handler(void)
                     digitalWrite(4,1);
                     flash_write_mode_start();
                 }
-                flash_write_accelgyro();
+                flash_write_all();
                 break;
         }
 
@@ -238,12 +243,12 @@ frame_handler(void)
             break;
 
         case READ_MEMORY_FRAME:
-            flash_read_accelgyro(CHAR_MODE);
+            flash_read_all(CHAR_MODE);
             run_mode = STANDBY_MODE;
             break;
 
         case READ_MEMORY_BYTE_FRAME:
-            flash_read_accelgyro(BYTE_MODE);
+            flash_read_all(BYTE_MODE);
             run_mode = STANDBY_MODE;
             break;
 

@@ -69,8 +69,6 @@ accelgyro_default_conf(void)
 void
 accelgyro_setup(void)
 {
-    //Join I2C
-    Wire.begin();
     accelgyro.mpu.initialize();
     accelgyro.mpu.setI2CBypassEnabled(true);
     delay(100);
