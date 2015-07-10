@@ -1,3 +1,4 @@
+
 /* ============================================
 I2Cdev device library code is placed under the MIT license
 Copyright (c) 2011 Jeff Rowberg
@@ -34,6 +35,7 @@ THE SOFTWARE.
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 #include "I2Cdev.h"
+#include <MS5611.h>
 //#include "MPU6050.h"
 
 #include "MPU6050_6Axis_MotionApps20.h"
