@@ -98,7 +98,6 @@ void print_all(int mode)
 	serial_print_char('\n');
 }
 
-
 void
 print_accelgyro_quaternions(int mode)
 {
@@ -111,7 +110,6 @@ print_accelgyro_quaternions(int mode)
         serial_print_float(accelgyro.q.y);
         serial_print_char(' ');
         serial_print_float(accelgyro.q.z);
-        serial_print_char('\n');
     }
     else if(mode == BYTE_MODE)
     {
@@ -119,8 +117,14 @@ print_accelgyro_quaternions(int mode)
         divide_int_print(accelgyro.q.x);
         divide_int_print(accelgyro.q.y);
         divide_int_print(accelgyro.q.z);
-        serial_print_char('\n');
     }
+}
+
+void print_all_quaternions(int mode)
+{
+	print_altimeter(mode);
+	print_accelgyro_quaternions(mode);
+	serial_print_char('\n');
 }
 
 #define FLASH_SYNC 2765

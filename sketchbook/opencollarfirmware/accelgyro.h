@@ -57,7 +57,7 @@ void dmpDataReady() {
     accelgyro.mpuInterrupt = true;
 }
 
-void 
+void
 accelgyro_default_conf(void)
 {
     ACCELGYRO_SET_ACCELRANGE(ACC_4G);
@@ -96,7 +96,19 @@ accelgyro_get(void)
                              &accelgyro.mx,
                              &accelgyro.my,
                              &accelgyro.mz);
-    
+
+}
+
+void accelgyro_dmp_enable(void)
+{
+	accelgyro.mpu.setDMPEnabled(true);
+}
+
+void accelgyro_dmp_disable(void)
+{
+	// DMP disables i2c bypass, bring it back.
+	accelgyro.mpu.setI2CBypassEnabled(true);
+	accelgyro.mpu.setDMPEnabled(false);
 }
 
 void
@@ -114,9 +126,8 @@ accelgyro_quaternion_setup(void)
 
     // make sure it worked
     if (accelgyro.devStatus == 0) {
-        // turn on the DMP, now that it's ready
-        //Serial.println(F("Enabling DMP..."));
-        accelgyro.mpu.setDMPEnabled(true);
+        // Don't turn on DMP yet - we only turn it on when we want quat data.
+        // It screws up direct access to magnetometer otherwise.
 
         // enable Arduino interrupt detection
         //Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
@@ -165,7 +176,7 @@ accelgyro_quaternion_get(void)
 
         // read a packet from FIFO
         accelgyro.mpu.getFIFOBytes(accelgyro.fifoBuffer, accelgyro.packetSize);
-        
+
         // track FIFO count here in case there is > 1 packet available
         // (this lets us immediately read more without waiting for an interrupt)
         accelgyro.fifoCount -= accelgyro.packetSize;

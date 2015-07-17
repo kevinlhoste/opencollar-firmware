@@ -23,8 +23,6 @@ THE SOFTWARE.
 ===============================================
 */
 
-
-
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #include "Wire.h"
@@ -38,6 +36,10 @@ THE SOFTWARE.
 #include <MS5611.h>
 //#include "MPU6050.h"
 
+// We could use DMP for everything, but the 9-axis version does not
+// fit into the flash any more.
+
+//#include "MPU6050_9Axis_MotionApps41.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include "accelgyro.h"
 #include "altimeter.h"
@@ -78,7 +80,7 @@ setup(void)
 {
     pinMode(4, OUTPUT);
     pinMode(8, INPUT);
-    
+
     button = 0;
 
     sf_setup();
@@ -87,12 +89,11 @@ setup(void)
     accelgyro_setup();
     altimeter_setup();
     // TODO: this setup shouldn't be done here
-    //accelgyro_quaternion_setup();
-    
-    startupDelay();
-    
+    accelgyro_quaternion_setup();
 
-   if(flash_setup())
+    startupDelay();
+
+    if(flash_setup())
     {
         flashMem.gyro_scale = GYRO_500;
         ACCELGYRO_SET_GYRORANGE(GYRO_500);
@@ -104,8 +105,8 @@ setup(void)
         flashMem.enabled_sensors = 2;
         flash_write_meta_data();
     }
-    
-    
+
+
     if(flash_read_config(&accelgyro.acc_range,&accelgyro.gyro_range,&accelgyro.sampling_rate,&accelgyro.enabled_sensors))
     {
         accelgyro_default_conf();
@@ -113,7 +114,7 @@ setup(void)
     }
     run_mode = STANDBY_MODE;
     is_write_mode = 0;
-    
+
 
 }
 
@@ -175,15 +176,16 @@ mode_handler(void)
     {
         time0 = micros();
         accelgyro_quaternion_get();
+	altimeter_get();
         switch(run_mode)
         {
             case LIVE_QUAT_MODE:
                 serial_print_str("U ");
-                print_accelgyro_quaternions(BYTE_MODE);
+                print_all_quaternions(BYTE_MODE);
                 break;
             case LIVE_SERIAL_QUAT_MODE:
                 serial_print_str("u ");
-                print_accelgyro_quaternions(CHAR_MODE);
+		print_all_quaternions(CHAR_MODE);
                 break;
             case WRITE_QUAT_MODE:
                 // TODO: Implement the necessary functions
@@ -213,10 +215,13 @@ frame_handler(void)
     switch(frame_type)
     {
         case LIVE_MODE_FRAME:
+            // We only use DMP if we want quaternion data.
+            accelgyro_dmp_disable();
             run_mode = LIVE_MODE;
             break;
 
         case LIVE_QUAT_MODE_FRAME:
+            accelgyro_dmp_enable();
             run_mode = LIVE_QUAT_MODE;
             break;
 
@@ -259,10 +264,12 @@ frame_handler(void)
             break;
 
         case LIVE_SERIAL_FRAME:
+            accelgyro_dmp_disable();
             run_mode = LIVE_SERIAL_MODE;
             break;
 
         case LIVE_SERIAL_QUAT_FRAME:
+            accelgyro_dmp_enable();
             run_mode = LIVE_SERIAL_QUAT_MODE;
             break;
 
@@ -272,7 +279,7 @@ frame_handler(void)
             serial_println_char(PING_FRAME);
             flash_write_config(accelgyro.acc_range,accelgyro.gyro_range,accelgyro.sampling_rate,accelgyro.enabled_sensors);
             break;
- 
+
         case GYRO_RANGE_FRAME:
             aux = SF_RANGE;
             ACCELGYRO_SET_GYRORANGE(aux);
@@ -306,6 +313,7 @@ int loop_counter = 0;
 void
 loop()
 {
+
     //loop_counter++;
     //if(loop_counter == 100000) loop_counter = 0;
     //if(loop_counter == 0) Serial.println("loop");

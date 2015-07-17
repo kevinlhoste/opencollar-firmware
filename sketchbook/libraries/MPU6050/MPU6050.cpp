@@ -1721,7 +1721,7 @@ void MPU6050::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int
 }
 
 bool MPU6050::checkMag(void)
-{	
+{
     uint8_t tmp;
     I2Cdev::readByte(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_WAI, &tmp);
 
