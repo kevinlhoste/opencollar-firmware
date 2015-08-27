@@ -68,6 +68,13 @@ int MvFrameHandler::parse_cmd_frame_bin_mode(char *read_buffer, int read_size,
     return SUCCESS_FRAME_READ;
 }
 
+static bool isDigit(char c)
+{
+    if (c < '0' || c > '9')
+        return false;
+    return true;
+}
+
 /**
  * parse_cmd_frame_ascii_mode
  *
@@ -169,19 +176,19 @@ const char * MvFrameHandler::err_description(int nack_value)
     switch(nack_value)
     {
         case ANS_NACK_BAD_FRAME_FORMAT:
-            return "bad frame format";
+            return "bad fmt";
         case ANS_NACK_EMPTY_MEMORY:
-            return "memory is empty";
+            return "empty mem";
         case ANS_NACK_MEMORY_FULL:
-            return "memory is full";
+            return "full mem";
         case ANS_NACK_UNKNOWN_CMD:
-            return "unknown command";
+            return "unk cmd";
         case ANS_NACK_UNKNOWN_CFG:
-            return "unknown configuration";
+            return "unk cfg";
         case ANS_NACK_INTERNAL_ERR:
-            return "internal error";
+            return "inter err";
         default:
-            return "unknown error";
+            return "unk err";
     }
 }
 
@@ -241,10 +248,10 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
 
                 case SENS_QUAT:
                     // Float to string
-                    dtostrf(ans->sub.sensor_data.data.quat.w, 1, 2, float_str[0]);
-                    dtostrf(ans->sub.sensor_data.data.quat.x, 1, 2, float_str[1]);
-                    dtostrf(ans->sub.sensor_data.data.quat.y, 1, 2, float_str[2]);
-                    dtostrf(ans->sub.sensor_data.data.quat.z, 1, 2, float_str[3]);
+                    sprintf(float_str[0], "%.2f", ans->sub.sensor_data.data.quat.w);
+                    sprintf(float_str[1], "%.2f", ans->sub.sensor_data.data.quat.x);
+                    sprintf(float_str[2], "%.2f", ans->sub.sensor_data.data.quat.y);
+                    sprintf(float_str[3], "%.2f", ans->sub.sensor_data.data.quat.z);
 
                     sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c W: %s X: %s Y: %s Z: %s",
                             ans->id,

@@ -4,7 +4,6 @@
 #include "MPU6050.h"
 #include "Wire.h"
 #include "SPI.h"
-#include "DataFlash.h"
 
 #include "MvFrameHandler.h"
 #include "MvCom.h"
@@ -14,39 +13,39 @@ class DummyMvCom : public MvCom
     public:
         int write_frame(char *frame, int size)
         {
-            Serial.print("MvCom write_frame size:");
-            Serial.print(size);
-            Serial.print("\n");
+            Serial1.print("MvCom write_frame size:");
+            Serial1.print(size);
+            Serial1.print("\n");
 
-            Serial.write(frame, size);
-            Serial.print("\n");
+            Serial1.write((uint8_t *)frame, size);
+            Serial1.print("\n");
             return size;
         }
 
         int read_frame(char *frame, int *size)
         {
-            *size = Serial.readBytesUntil('\n', frame, 100);
+            *size = Serial1.readBytesUntil('\n', frame, 100);
 
-            Serial.print("MvCom read_frame ");
-            Serial.print(*size);
-            Serial.print(":");
+            Serial1.print("MvCom read_frame ");
+            Serial1.print(*size);
+            Serial1.print(":");
 
-            Serial.write(frame, *size);
+            Serial1.write((uint8_t *)frame, *size);
 
-            Serial.print("\n");
+            Serial1.print("\n");
 
             return 0;
         }
 
         int set_mode(enum mvCom_mode mode)
         {
-            Serial.print("MvCom set_mode\n");
+            Serial1.print("MvCom set_mode\n");
             return ANS_NACK_UNKNOWN_CMD;
         }
 
         enum mvCom_mode get_mode(void)
         {
-            Serial.print("MvCom get_mode\n");
+            Serial1.print("MvCom get_mode\n");
             return MVCOM_ASCII;
         }
 };
@@ -61,14 +60,14 @@ struct frame frame_version;
 struct frame frame_cfg_get;
 struct frame frame_sensor_acc_raw;
 struct frame frame_sensor_gyro_raw;
-struct frame frame_sensor_euler;
 struct frame frame_sensor_quat;
-struct frame frame_sensor_grav;
 
 
 void setup()
 {
-    Serial.begin(38400);
+    Serial1.begin(9600);
+    delay(1000);
+    Serial1.println("Start");
 
     g_com = new DummyMvCom;
 
@@ -115,32 +114,19 @@ void setup()
     frame_sensor_quat.answer.sub.sensor_data.data.quat.z = 98.0;
     frame_sensor_quat.com = g_com;
 
-    frame_sensor_euler.answer.id = ANS_ID_REC_PLAY;
-    frame_sensor_euler.answer.sub.sensor_data.type = SENS_EULER;
-    frame_sensor_euler.answer.sub.sensor_data.data.euler.psi = 4.32;
-    frame_sensor_euler.answer.sub.sensor_data.data.euler.theta = -1105.98;
-    frame_sensor_euler.answer.sub.sensor_data.data.euler.phi = 98.0;
-    frame_sensor_euler.com = g_com;
-
-    frame_sensor_grav.answer.id = ANS_ID_REC_PLAY;
-    frame_sensor_grav.answer.sub.sensor_data.type = SENS_GRAVITY;
-    frame_sensor_grav.answer.sub.sensor_data.data.gravity.yaw = 4.32;
-    frame_sensor_grav.answer.sub.sensor_data.data.gravity.pitch = -1105.98;
-    frame_sensor_grav.answer.sub.sensor_data.data.gravity.roll = 98.0;
-    frame_sensor_grav.com = g_com;
 }
 
 void loop()
 {
     if (g_fhandler->read_frame(&frame_ack) == SUCCESS_FRAME_READ)
     {
-        Serial.print("Mv frame cmd_id:");
-        Serial.print((char)frame_ack.cmd.id);
-        Serial.print(" cfg_id:");
-        Serial.print((char)frame_ack.cmd.sub.cfg.id);
-        Serial.print(" cfg_value:");
-        Serial.print(frame_ack.cmd.sub.cfg.value);
-        Serial.print("\n");
+        Serial1.print("Mv frame cmd_id:");
+        Serial1.print((char)frame_ack.cmd.id);
+        Serial1.print(" cfg_id:");
+        Serial1.print((char)frame_ack.cmd.sub.cfg.id);
+        Serial1.print(" cfg_value:");
+        Serial1.print(frame_ack.cmd.sub.cfg.value);
+        Serial1.print("\n");
 
         // Send one from each frame to check the formats
 
@@ -150,8 +136,6 @@ void loop()
         g_fhandler->write_frame(&frame_cfg_get     );
         g_fhandler->write_frame(&frame_sensor_acc_raw);
         g_fhandler->write_frame(&frame_sensor_gyro_raw);
-        g_fhandler->write_frame(&frame_sensor_euler);
         g_fhandler->write_frame(&frame_sensor_quat );
-        g_fhandler->write_frame(&frame_sensor_grav );
     }
 }

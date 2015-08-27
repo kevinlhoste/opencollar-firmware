@@ -184,7 +184,7 @@ int SerialMvCom::_write_frame_ascii(char *frame, int size)
     this->serial->print((int)this->sequencer);
     this->serial->write(' ');
     /* print the frame */
-    this->serial->write(frame, size);
+    this->serial->write((uint8_t*)frame, size);
     /* print the footer */
     this->serial->write('\n');
     this->serial->flush();
@@ -213,9 +213,9 @@ int SerialMvCom::_write_frame_byte(char *frame, int size)
     /* print the sequencer */
     this->serial->write(this->sequencer);
     /* print the frame */
-    this->serial->write(frame,size);
+    this->serial->write((uint8_t*)frame,size);
     /* print the crc (footer) */
-    this->serial->write((char*)&crc,sizeof(crc));
+    this->serial->write((uint8_t*)&crc,sizeof(crc));
     this->serial->flush();
     /* update the sequencer */
     this->sequencer++;
@@ -260,7 +260,7 @@ enum mvCom_mode SerialMvCom::get_mode(void)
  *
  * @brief initialize a structure to be used as a MvCom with a serial port
  */
-SerialMvCom::SerialMvCom(Stream *serial)
+SerialMvCom::SerialMvCom(UARTClass *serial)
 {
     this->serial = serial;
     this->frame_size = 0;
