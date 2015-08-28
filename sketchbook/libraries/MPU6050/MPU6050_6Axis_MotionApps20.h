@@ -1,6 +1,6 @@
 // I2Cdev library collection - MPU6050 I2C device class, 6-axis MotionApps 2.0 implementation
 // Based on InvenSense MPU-6050 register map document rev. 2.0, 5/19/2011 (RM-MPU-6000A-00)
-// 5/20/2013 by Jeff Rowberg <jeff@rowberg.net>
+// 6/18/2012 by Jeff Rowberg <jeff@rowberg.net>
 // Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
 //
 // Changelog:
@@ -40,51 +40,7 @@ THE SOFTWARE.
 #define MPU6050_INCLUDE_DMP_MOTIONAPPS20
 
 #include "MPU6050.h"
-
-// Tom Carpenter's conditional PROGMEM code
-// http://forum.arduino.cc/index.php?topic=129407.0
-#ifndef __arm__
-    #include <avr/pgmspace.h>
-#else
-    // Teensy 3.0 library conditional PROGMEM code from Paul Stoffregen
-    #ifndef __PGMSPACE_H_
-        #define __PGMSPACE_H_ 1
-        #include <inttypes.h>
-
-        #define PROGMEM
-        #define PGM_P  const char *
-        #define PSTR(str) (str)
-        #define F(x) x
-
-        typedef void prog_void;
-        typedef char prog_char;
-        typedef unsigned char prog_uchar;
-        typedef int8_t prog_int8_t;
-        typedef uint8_t prog_uint8_t;
-        typedef int16_t prog_int16_t;
-        typedef uint16_t prog_uint16_t;
-        typedef int32_t prog_int32_t;
-        typedef uint32_t prog_uint32_t;
-        
-        #define strcpy_P(dest, src) strcpy((dest), (src))
-        #define strcat_P(dest, src) strcat((dest), (src))
-        #define strcmp_P(a, b) strcmp((a), (b))
-        
-        #define pgm_read_byte(addr) (*(const unsigned char *)(addr))
-        #define pgm_read_word(addr) (*(const unsigned short *)(addr))
-        #define pgm_read_dword(addr) (*(const unsigned long *)(addr))
-        #define pgm_read_float(addr) (*(const float *)(addr))
-        
-        #define pgm_read_byte_near(addr) pgm_read_byte(addr)
-        #define pgm_read_word_near(addr) pgm_read_word(addr)
-        #define pgm_read_dword_near(addr) pgm_read_dword(addr)
-        #define pgm_read_float_near(addr) pgm_read_float(addr)
-        #define pgm_read_byte_far(addr) pgm_read_byte(addr)
-        #define pgm_read_word_far(addr) pgm_read_word(addr)
-        #define pgm_read_dword_far(addr) pgm_read_dword(addr)
-        #define pgm_read_float_far(addr) pgm_read_float(addr)
-    #endif
-#endif
+#include <avr/pgmspace.h>
 
 /* Source is from the InvenSense MotionApps v2 demo code. Original source is
  * unavailable, unless you happen to be amazing as decompiling binary by
@@ -357,10 +313,10 @@ uint8_t MPU6050::dmpInitialize() {
     DEBUG_PRINTLN(otpValid ? F("valid!") : F("invalid!"));
 
     // get X/Y/Z gyro offsets
-    DEBUG_PRINTLN(F("Reading gyro offset TC values..."));
-    int8_t xgOffsetTC = getXGyroOffsetTC();
-    int8_t ygOffsetTC = getYGyroOffsetTC();
-    int8_t zgOffsetTC = getZGyroOffsetTC();
+    DEBUG_PRINTLN(F("Reading gyro offset values..."));
+    int8_t xgOffset = getXGyroOffset();
+    int8_t ygOffset = getYGyroOffset();
+    int8_t zgOffset = getZGyroOffset();
     DEBUG_PRINT(F("X gyro offset = "));
     DEBUG_PRINTLN(xgOffset);
     DEBUG_PRINT(F("Y gyro offset = "));
@@ -418,15 +374,15 @@ uint8_t MPU6050::dmpInitialize() {
             DEBUG_PRINTLN(F("Clearing OTP Bank flag..."));
             setOTPBankValid(false);
 
-            DEBUG_PRINTLN(F("Setting X/Y/Z gyro offset TCs to previous values..."));
-            setXGyroOffsetTC(xgOffsetTC);
-            setYGyroOffsetTC(ygOffsetTC);
-            setZGyroOffsetTC(zgOffsetTC);
+            DEBUG_PRINTLN(F("Setting X/Y/Z gyro offsets to previous values..."));
+            setXGyroOffset(xgOffset);
+            setYGyroOffset(ygOffset);
+            setZGyroOffset(zgOffset);
 
-            //DEBUG_PRINTLN(F("Setting X/Y/Z gyro user offsets to zero..."));
-            //setXGyroOffset(0);
-            //setYGyroOffset(0);
-            //setZGyroOffset(0);
+            DEBUG_PRINTLN(F("Setting X/Y/Z gyro user offsets to zero..."));
+            setXGyroOffsetUser(0);
+            setYGyroOffsetUser(0);
+            setZGyroOffsetUser(0);
 
             DEBUG_PRINTLN(F("Writing final memory update 1/7 (function unknown)..."));
             uint8_t dmpUpdate[16], j;
@@ -442,7 +398,7 @@ uint8_t MPU6050::dmpInitialize() {
             resetFIFO();
 
             DEBUG_PRINTLN(F("Reading FIFO count..."));
-            uint16_t fifoCount = getFIFOCount();
+            uint8_t fifoCount = getFIFOCount();
             uint8_t fifoBuffer[128];
 
             DEBUG_PRINT(F("Current FIFO count="));
@@ -647,21 +603,13 @@ uint8_t MPU6050::dmpGetGyro(int16_t *data, const uint8_t* packet) {
     data[2] = (packet[24] << 8) + packet[25];
     return 0;
 }
-uint8_t MPU6050::dmpGetGyro(VectorInt16 *v, const uint8_t* packet) {
-    // TODO: accommodate different arrangements of sent data (ONLY default supported now)
-    if (packet == 0) packet = dmpPacketBuffer;
-    v -> x = (packet[16] << 8) + packet[17];
-    v -> y = (packet[20] << 8) + packet[21];
-    v -> z = (packet[24] << 8) + packet[25];
-    return 0;
-}
 // uint8_t MPU6050::dmpSetLinearAccelFilterCoefficient(float coef);
 // uint8_t MPU6050::dmpGetLinearAccel(long *data, const uint8_t* packet);
 uint8_t MPU6050::dmpGetLinearAccel(VectorInt16 *v, VectorInt16 *vRaw, VectorFloat *gravity) {
-    // get rid of the gravity component (+1g = +8192 in standard DMP FIFO packet, sensitivity is 2g)
-    v -> x = vRaw -> x - gravity -> x*8192;
-    v -> y = vRaw -> y - gravity -> y*8192;
-    v -> z = vRaw -> z - gravity -> z*8192;
+    // get rid of the gravity component (+1g = +4096 in standard DMP FIFO packet)
+    v -> x = vRaw -> x - gravity -> x*4096;
+    v -> y = vRaw -> y - gravity -> y*4096;
+    v -> z = vRaw -> z - gravity -> z*4096;
     return 0;
 }
 // uint8_t MPU6050::dmpGetLinearAccelInWorld(long *data, const uint8_t* packet);
@@ -726,7 +674,7 @@ uint8_t MPU6050::dmpReadAndProcessFIFOPacket(uint8_t numPackets, uint8_t *proces
 
         // process packet
         if ((status = dmpProcessFIFOPacket(buf)) > 0) return status;
-        
+
         // increment external process count variable, if supplied
         if (processed != 0) *processed++;
     }

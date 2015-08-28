@@ -34,13 +34,6 @@ THE SOFTWARE.
 ===============================================
 */
 
-/*
- * TODO: Including MPU6050_6Axis_MotionApps20.h here is bad, it forces the use of
- * the Motionsapps 20. As the MPU6050 lib put codes in the header files, this is
- * necessary to be able to use this lib within another lib
- */
-#include "MPU6050_6Axis_MotionApps20.h"
-//#include "MPU6050_9Axis_MotionApps41.h"
 #include "MPU6050.h"
 
 /** Default constructor, uses default I2C address.
@@ -130,7 +123,14 @@ void MPU6050::setAuxVDDIOLevel(uint8_t level) {
 uint8_t MPU6050::getRate() {
     I2Cdev::readByte(devAddr, MPU6050_RA_SMPLRT_DIV, buffer);
     return buffer[0];
+} 
+
+uint8_t MPU6050::checkMagStatus() {
+    I2Cdev::readByte(MPU9150_RA_MAG_ADDRESS, 0x02, buffer);
+    return buffer[0];
 }
+
+
 /** Set gyroscope sample rate divider.
  * @param rate New sample rate divider
  * @see getRate()
@@ -1723,37 +1723,33 @@ bool MPU6050::getIntDataReadyStatus() {
  * @see MPU6050_RA_ACCEL_XOUT_H
  */
 void MPU6050::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz) {
-    getMotion6(ax, ay, az, gx, gy, gz);
-    getMag(mx, my, mz);
+    
+	//get accel and gyro
+	getMotion6(ax, ay, az, gx, gy, gz);
+	
+	//read mag
+	I2Cdev::writeByte(devAddr, MPU6050_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
+	delay(10);
+	I2Cdev::writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //enable the magnetometer
+	delay(10);
+	I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
+	*mx = (((int16_t)buffer[1]) << 8) | buffer[0];
+        *my = (((int16_t)buffer[3]) << 8) | buffer[2];
+        *mz = (((int16_t)buffer[5]) << 8) | buffer[4];		
 }
 
-bool MPU6050::checkMag(void)
-{	
-    uint8_t tmp;
-    I2Cdev::readByte(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_WAI, &tmp);
-
-    return (tmp == 0x48);
+void MPU6050::getMag(int16_t* mx, int16_t* my, int16_t* mz) {
+    
+	//read mag
+	I2Cdev::writeByte(devAddr, MPU6050_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
+	delay(10);
+	I2Cdev::writeByte(MPU9150_RA_MAG_ADDRESS, 0x0A, 0x01); //enable the magnetometer
+	delay(10);
+	I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
+	*mx = (((int16_t)buffer[1]) << 8) | buffer[0];
+        *my = (((int16_t)buffer[3]) << 8) | buffer[2];
+        *mz = (((int16_t)buffer[5]) << 8) | buffer[4];		
 }
-
-void MPU6050::getMag(int16_t* mx, int16_t* my, int16_t* mz)
-{
-    uint8_t tmp = 0;
-
-    // Ask for a single measurement.
-    I2Cdev::writeByte(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_CNTL, 1);
-
-    // Wait for the measurement result;
-    do {
-        I2Cdev::readByte(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_ST1, &tmp);
-    } while (!tmp);
-
-    I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
-    *mx = (((int16_t)buffer[1]) << 8) | buffer[0];
-    *my = (((int16_t)buffer[3]) << 8) | buffer[2];
-    *mz = (((int16_t)buffer[5]) << 8) | buffer[4];
-}
-
-
 /** Get raw 6-axis motion sensor readings (accel/gyro).
  * Retrieves all currently available motion sensor values.
  * @param ax 16-bit signed integer container for accelerometer X-axis value
@@ -2025,14 +2021,6 @@ uint32_t MPU6050::getExternalSensorDWord(int position) {
 
 // MOT_DETECT_STATUS register
 
-/** Get full motion detection status register content (all bits).
- * @return Motion detection status byte
- * @see MPU6050_RA_MOT_DETECT_STATUS
- */
-uint8_t MPU6050::getMotionStatus() {
-    I2Cdev::readByte(devAddr, MPU6050_RA_MOT_DETECT_STATUS, buffer);
-    return buffer[0];
-}
 /** Get X-axis negative motion detection interrupt status.
  * @return Motion detection status
  * @see MPU6050_RA_MOT_DETECT_STATUS
@@ -2741,18 +2729,6 @@ uint8_t MPU6050::getDeviceID() {
     I2Cdev::readBits(devAddr, MPU6050_RA_WHO_AM_I, MPU6050_WHO_AM_I_BIT, MPU6050_WHO_AM_I_LENGTH, buffer);
     return buffer[0];
 }
-/** Set Device ID.
- * Write a new ID into the WHO_AM_I register (no idea why this should ever be
- * necessary though).
- * @param id New device ID to set.
- * @see getDeviceID()
- * @see MPU6050_RA_WHO_AM_I
- * @see MPU6050_WHO_AM_I_BIT
- * @see MPU6050_WHO_AM_I_LENGTH
- */
-void MPU6050::setDeviceID(uint8_t id) {
-    I2Cdev::writeBits(devAddr, MPU6050_RA_WHO_AM_I, MPU6050_WHO_AM_I_BIT, MPU6050_WHO_AM_I_LENGTH, id);
-}
 
 // ======== UNDOCUMENTED/DMP REGISTERS/METHODS ========
 
@@ -2765,31 +2741,31 @@ uint8_t MPU6050::getOTPBankValid() {
 void MPU6050::setOTPBankValid(bool enabled) {
     I2Cdev::writeBit(devAddr, MPU6050_RA_XG_OFFS_TC, MPU6050_TC_OTP_BNK_VLD_BIT, enabled);
 }
-int8_t MPU6050::getXGyroOffsetTC() {
+int8_t MPU6050::getXGyroOffset() {
     I2Cdev::readBits(devAddr, MPU6050_RA_XG_OFFS_TC, MPU6050_TC_OFFSET_BIT, MPU6050_TC_OFFSET_LENGTH, buffer);
     return buffer[0];
 }
-void MPU6050::setXGyroOffsetTC(int8_t offset) {
+void MPU6050::setXGyroOffset(int8_t offset) {
     I2Cdev::writeBits(devAddr, MPU6050_RA_XG_OFFS_TC, MPU6050_TC_OFFSET_BIT, MPU6050_TC_OFFSET_LENGTH, offset);
 }
 
 // YG_OFFS_TC register
 
-int8_t MPU6050::getYGyroOffsetTC() {
+int8_t MPU6050::getYGyroOffset() {
     I2Cdev::readBits(devAddr, MPU6050_RA_YG_OFFS_TC, MPU6050_TC_OFFSET_BIT, MPU6050_TC_OFFSET_LENGTH, buffer);
     return buffer[0];
 }
-void MPU6050::setYGyroOffsetTC(int8_t offset) {
+void MPU6050::setYGyroOffset(int8_t offset) {
     I2Cdev::writeBits(devAddr, MPU6050_RA_YG_OFFS_TC, MPU6050_TC_OFFSET_BIT, MPU6050_TC_OFFSET_LENGTH, offset);
 }
 
 // ZG_OFFS_TC register
 
-int8_t MPU6050::getZGyroOffsetTC() {
+int8_t MPU6050::getZGyroOffset() {
     I2Cdev::readBits(devAddr, MPU6050_RA_ZG_OFFS_TC, MPU6050_TC_OFFSET_BIT, MPU6050_TC_OFFSET_LENGTH, buffer);
     return buffer[0];
 }
-void MPU6050::setZGyroOffsetTC(int8_t offset) {
+void MPU6050::setZGyroOffset(int8_t offset) {
     I2Cdev::writeBits(devAddr, MPU6050_RA_ZG_OFFS_TC, MPU6050_TC_OFFSET_BIT, MPU6050_TC_OFFSET_LENGTH, offset);
 }
 
@@ -2855,31 +2831,31 @@ void MPU6050::setZAccelOffset(int16_t offset) {
 
 // XG_OFFS_USR* registers
 
-int16_t MPU6050::getXGyroOffset() {
+int16_t MPU6050::getXGyroOffsetUser() {
     I2Cdev::readBytes(devAddr, MPU6050_RA_XG_OFFS_USRH, 2, buffer);
     return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
-void MPU6050::setXGyroOffset(int16_t offset) {
+void MPU6050::setXGyroOffsetUser(int16_t offset) {
     I2Cdev::writeWord(devAddr, MPU6050_RA_XG_OFFS_USRH, offset);
 }
 
 // YG_OFFS_USR* register
 
-int16_t MPU6050::getYGyroOffset() {
+int16_t MPU6050::getYGyroOffsetUser() {
     I2Cdev::readBytes(devAddr, MPU6050_RA_YG_OFFS_USRH, 2, buffer);
     return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
-void MPU6050::setYGyroOffset(int16_t offset) {
+void MPU6050::setYGyroOffsetUser(int16_t offset) {
     I2Cdev::writeWord(devAddr, MPU6050_RA_YG_OFFS_USRH, offset);
 }
 
 // ZG_OFFS_USR* register
 
-int16_t MPU6050::getZGyroOffset() {
+int16_t MPU6050::getZGyroOffsetUser() {
     I2Cdev::readBytes(devAddr, MPU6050_RA_ZG_OFFS_USRH, 2, buffer);
     return (((int16_t)buffer[0]) << 8) | buffer[1];
 }
-void MPU6050::setZGyroOffset(int16_t offset) {
+void MPU6050::setZGyroOffsetUser(int16_t offset) {
     I2Cdev::writeWord(devAddr, MPU6050_RA_ZG_OFFS_USRH, offset);
 }
 

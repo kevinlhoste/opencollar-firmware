@@ -1,13 +1,13 @@
-// I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class
-// 10/7/2011 by Jeff Rowberg <jeff@rowberg.net>
-// Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
+// I2C device class (I2Cdev) demonstration Arduino sketch for MPU9150
+// 1/4/2013 original by Jeff Rowberg <jeff@rowberg.net> at https://github.com/jrowberg/i2cdevlib
+//          modified by Aaron Weiss <aaron@sparkfun.com>
 //
 // Changelog:
 //     2011-10-07 - initial release
+//     2013-1-4 - added raw magnetometer output
 
 /* ============================================
 I2Cdev device library code is placed under the MIT license
-Copyright (c) 2011 Jeff Rowberg
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -46,6 +46,7 @@ MPU6050 accelgyro;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+int16_t mx, my, mz;
 
 #define LED_PIN 13
 bool blinkState = false;
@@ -57,15 +58,15 @@ void setup() {
     // initialize serial communication
     // (38400 chosen because it works as well at 8MHz as it does at 16MHz, but
     // it's really up to you depending on your project)
-    Serial.begin(38400);
+    Serial1.begin(38400);
 
     // initialize device
-    Serial.println("Initializing I2C devices...");
+    Serial1.println("Initializing I2C devices...");
     accelgyro.initialize();
 
     // verify connection
-    Serial.println("Testing device connections...");
-    Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    Serial1.println("Testing device connections...");
+    Serial1.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
     // configure Arduino LED for
     pinMode(LED_PIN, OUTPUT);
@@ -73,20 +74,23 @@ void setup() {
 
 void loop() {
     // read raw accel/gyro measurements from device
-    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    accelgyro.getMotion9(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
 
     // these methods (and a few others) are also available
     //accelgyro.getAcceleration(&ax, &ay, &az);
     //accelgyro.getRotation(&gx, &gy, &gz);
 
     // display tab-separated accel/gyro x/y/z values
-    Serial.print("a/g:\t");
-    Serial.print(ax); Serial.print("\t");
-    Serial.print(ay); Serial.print("\t");
-    Serial.print(az); Serial.print("\t");
-    Serial.print(gx); Serial.print("\t");
-    Serial.print(gy); Serial.print("\t");
-    Serial.println(gz);
+    Serial1.print("a/g/m:\t");
+    Serial1.print(ax); Serial1.print("\t");
+    Serial1.print(ay); Serial1.print("\t");
+    Serial1.print(az); Serial1.print("\t");
+    Serial1.print(gx); Serial1.print("\t");
+    Serial1.print(gy); Serial1.print("\t");
+    Serial1.print(gz); Serial1.print("\t");
+    Serial1.print(mx); Serial1.print("\t");
+    Serial1.print(my); Serial1.print("\t");
+    Serial1.println(mz);
 
     // blink LED to indicate activity
     blinkState = !blinkState;
