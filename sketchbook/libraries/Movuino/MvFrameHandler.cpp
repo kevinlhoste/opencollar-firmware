@@ -226,8 +226,6 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
         case ANS_ID_REC_PLAY:
             switch(ans->sub.sensor_data.type)
             {
-                char float_str[4][FLOAT_BUFFER_SIZE];
-
                 case SENS_ACC_RAW:
                 case SENS_GYRO_RAW:
                 case SENS_MAG_RAW:
@@ -240,19 +238,13 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                     goto ret;
 
                 case SENS_QUAT:
-                    // Float to string
-                    dtostrf(ans->sub.sensor_data.data.quat.w, 1, 2, float_str[0]);
-                    dtostrf(ans->sub.sensor_data.data.quat.x, 1, 2, float_str[1]);
-                    dtostrf(ans->sub.sensor_data.data.quat.y, 1, 2, float_str[2]);
-                    dtostrf(ans->sub.sensor_data.data.quat.z, 1, 2, float_str[3]);
-
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c W: %s X: %s Y: %s Z: %s",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c W: %.2f X: %.2f Y: %.2f Z: %.2f",
                             ans->id,
                             ans->sub.sensor_data.type,
-                            float_str[0],
-                            float_str[1],
-                            float_str[2],
-                            float_str[3]);
+                            ans->sub.sensor_data.data.quat.w,
+                            ans->sub.sensor_data.data.quat.x,
+                            ans->sub.sensor_data.data.quat.y,
+                            ans->sub.sensor_data.data.quat.z);
                     goto ret;
             }
     }

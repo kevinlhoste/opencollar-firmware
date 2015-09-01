@@ -27,12 +27,4 @@
  */
 #define FRAME_ASCII_PREFIX "F: %c "
 
-/**
- * FLOAT_BUFFER_SIZE
- *
- * The max buffer size used to transform a float into a string
- */
-#define FLOAT_BUFFER_SIZE 15
-
-
 #endif /* _DEFINITIONS_H */
