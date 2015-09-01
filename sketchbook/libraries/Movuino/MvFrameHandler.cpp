@@ -68,6 +68,13 @@ int MvFrameHandler::parse_cmd_frame_bin_mode(char *read_buffer, int read_size,
     return SUCCESS_FRAME_READ;
 }
 
+static bool isDigit(char c)
+{
+    if (c < '0' || c > '9')
+        return false;
+    return true;
+}
+
 /**
  * parse_cmd_frame_ascii_mode
  *
