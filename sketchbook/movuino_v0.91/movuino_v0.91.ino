@@ -8,7 +8,7 @@
 
 #include "MvFrameHandler.h"
 #include "MvCom.h"
-#include "MvAccGyro.h"
+#include "MvSens.h"
 #include "Storage.h"
 #include "SerialMvCom.h"
 
@@ -220,7 +220,7 @@ void loop()
 
                 /* Check if the acc has already been initialized */
                 if (!g_ctx.live_ctl.ref)
-                    ans_err = MvAccGyro::open();
+                    ans_err = MvSens::open();
 
                 if (!ans_err)
                     add_com_to_live_list(g_ctx.frame.com);
@@ -235,7 +235,7 @@ void loop()
 
                 /* If there is no more com ports in live mode */
                 if (!g_ctx.live_ctl.ref)
-                    ans_err = MvAccGyro::close();
+                    ans_err = MvSens::close();
 
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 break;
@@ -247,10 +247,10 @@ void loop()
                 switch(g_ctx.frame.cmd.sub.cfg.id)
                 {
                     case CFG_ID_ACC_SENS:
-                        ans_err = MvAccGyro::set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
+                        ans_err = MvSens::set_acc_sens(g_ctx.frame.cmd.sub.cfg.value);
                         break;
                     case CFG_ID_GYRO_SENS:
-                        ans_err = MvAccGyro::set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
+                        ans_err = MvSens::set_gyro_sens(g_ctx.frame.cmd.sub.cfg.value);
                         break;
                     case CFG_ID_SAMPLING_RATE:
                         g_ctx.live_ctl.period = 1000000/g_ctx.frame.cmd.sub.cfg.value;
@@ -364,7 +364,7 @@ void loop()
         // Prepare values
         // This is called every loop because if the DMP is being used, we must call this function
         // to read from the FIFO
-        MvAccGyro::read();
+        MvSens::read();
 
         // Check if its time to print the next data
         if(check_live_time(g_ctx.live_ctl.time_stamp, g_ctx.live_ctl.period))
@@ -386,21 +386,21 @@ void loop()
             if(g_ctx.storage->get_cfg(CFG_ID_LIVE_ACC_RAW_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_ACC_RAW;
-                g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_acc();
+                g_ctx.frame.answer.sub.sensor_data.data.raw = MvSens::get_raw_acc();
                 send_live(&g_ctx.frame);
             }
             // Send raw gyro data
             if(g_ctx.storage->get_cfg(CFG_ID_LIVE_GYRO_RAW_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_GYRO_RAW;
-                g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_gyro();
+                g_ctx.frame.answer.sub.sensor_data.data.raw = MvSens::get_raw_gyro();
                 send_live(&g_ctx.frame);
             }
             // Send raw mag data
             if(g_ctx.storage->get_cfg(CFG_ID_LIVE_MAG_RAW_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_MAG_RAW;
-                g_ctx.frame.answer.sub.sensor_data.data.raw = MvAccGyro::get_raw_mag();
+                g_ctx.frame.answer.sub.sensor_data.data.raw = MvSens::get_raw_mag();
                 send_live(&g_ctx.frame);
             }
 
@@ -409,7 +409,7 @@ void loop()
             if(g_ctx.storage->get_cfg(CFG_ID_LIVE_QUATERNION_EN))
             {
                 g_ctx.frame.answer.sub.sensor_data.type = SENS_QUAT;
-                g_ctx.frame.answer.sub.sensor_data.data.quat = MvAccGyro::get_quat();
+                g_ctx.frame.answer.sub.sensor_data.data.quat = MvSens::get_quat();
                 send_live(&g_ctx.frame);
             }
 

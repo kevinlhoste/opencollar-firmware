@@ -4,7 +4,7 @@
 /** 
  * Uncomment the define below to compile with DMP enabled (it will turn quaternions on)
  */
-//#define MV_ACC_GYRO_DMP_EN
+//#define MV_SENS_DMP_EN
 
 /**
  * BUFFER_SIZE

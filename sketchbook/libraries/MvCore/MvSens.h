@@ -1,5 +1,5 @@
-#ifndef _MV_ACC_GYRO_H
-#define _MV_ACC_GYRO_H
+#ifndef _MV_SENS_H
+#define _MV_SENS_H
 
 // This define is necessary because the MPU6050 have code in the .h files
 // so we need it to force the declaration of the motionapps 20 functions
@@ -18,7 +18,7 @@ struct dmp {
     uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
 };
 
-class MvAccGyro {
+class MvSens {
 
     public:
         static int open(void);
@@ -45,21 +45,21 @@ class MvAccGyro {
 
     private:
         // This class shouldn't be instatiated
-        MvAccGyro(void);
+        MvSens(void);
 
         static MPU6050 accelgyro;
         static sensor_3_axes acc;
         static sensor_3_axes gyro;
         static sensor_3_axes mag;
 
-#ifdef MV_ACC_GYRO_DMP_EN
+#ifdef MV_SENS_DMP_EN
         static void dmpDataReady(void);
         static void accelgyro_dmp_setup(void);
         static void accelgyro_dmp_data_get(void);
 
         static struct dmp dmp;
         static sensor_quaternion quat;
-#endif //#ifdev MV_ACC_GYRO_DMP_EN
+#endif //#ifdev MV_SENS_DMP_EN
 };
 
-#endif /* _MV_ACC_GYRO_H */
+#endif /* _MV_SENS_H */
