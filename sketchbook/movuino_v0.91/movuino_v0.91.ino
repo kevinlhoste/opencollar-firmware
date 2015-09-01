@@ -9,7 +9,7 @@
 #include "MvFrameHandler.h"
 #include "MvCom.h"
 #include "MvAccGyro.h"
-#include "MvStorage.h"
+#include "Storage.h"
 #include "SerialMvCom.h"
 
 #define BUTTON_PIN 8
@@ -29,7 +29,7 @@ struct app_context
 
     MvFrameHandler *fhandler;
     struct frame frame;
-    MvStorage *storage;
+    Storage *storage;
     uint8_t version[3] = {0, 0, 1};
     char button;
 } g_ctx;
@@ -56,7 +56,7 @@ void setup()
 
     g_ctx.fhandler = new MvFrameHandler(com, 2);
 
-    g_ctx.storage = new MvStorage();
+    g_ctx.storage = new Storage();
     if(g_ctx.storage->status() < 0)
     {
         g_ctx.storage->reset();

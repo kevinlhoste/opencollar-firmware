@@ -1,11 +1,11 @@
-#include "MvStorage.h"
+#include "Storage.h"
 
 /**
  * read_storage_data
  *
  * @brief read all the data from the persistent memory
  */
-int MvStorage::read_storage_data(void)
+int Storage::read_storage_data(void)
 {
     int i;
 
@@ -21,14 +21,14 @@ int MvStorage::read_storage_data(void)
 }
 
 /**
- * MvStorage
+ * Storage
  *
  * @brief Initialize the object
  * This constructor can fail to initialize, the user must
  * use the status method in order to verify if it was initialized
  * or not. In the case when it wasn't, the user should do a reset
  */
-MvStorage::MvStorage(void)
+Storage::Storage(void)
 {
     /* start the SPI for the external flash */
     SPI.begin();
@@ -47,7 +47,7 @@ MvStorage::MvStorage(void)
  * @brief inform if the object is working or not
  * return 0 when it is and -1 when it is not
  */
-int MvStorage::status(void)
+int Storage::status(void)
 {
     if (this->data.init_key == INIT_KEY)
     {
@@ -65,7 +65,7 @@ int MvStorage::status(void)
  * @brief reset the values of all variables but doesn't write it at the
  * persistent memory
  */
-void MvStorage::soft_reset(void)
+void Storage::soft_reset(void)
 {
     unsigned int i;
 
@@ -80,7 +80,7 @@ void MvStorage::soft_reset(void)
  *
  * @brief write all the data to the persistent memory.
  */
-int MvStorage::write_storage_data(void)
+int Storage::write_storage_data(void)
 {
     int i;
 
@@ -100,7 +100,7 @@ int MvStorage::write_storage_data(void)
  *
  * @brief clear recorded data
  */
-void MvStorage::clear_recordings(void)
+void Storage::clear_recordings(void)
 {
     /* write the record part to say it is empty */
     this->flash.pageToBuffer(1,0);
@@ -115,7 +115,7 @@ void MvStorage::clear_recordings(void)
  * @brief reset all the variable values and tries to write it in the persistent memory.
  * Return 0 when succeded and -1 when the persistent memory is unreachable
  */
-int MvStorage::reset(void)
+int Storage::reset(void)
 {
     /* reset variables */
     this->data.init_key = INIT_KEY;
@@ -140,7 +140,7 @@ int MvStorage::reset(void)
     return 0;
 }
 
-int MvStorage::set_cfg(enum cfg_id id, uint8_t value)
+int Storage::set_cfg(enum cfg_id id, uint8_t value)
 {
     int index = cfg_id_get_index(id); 
     if (index < 0)
@@ -149,7 +149,7 @@ int MvStorage::set_cfg(enum cfg_id id, uint8_t value)
     return this->write_storage_data();
 }
 
-uint8_t MvStorage::get_cfg(enum cfg_id id)
+uint8_t Storage::get_cfg(enum cfg_id id)
 {
     int index = cfg_id_get_index(id); 
     if (index < 0)
@@ -163,7 +163,7 @@ uint8_t MvStorage::get_cfg(enum cfg_id id)
  * @brief rewinds the external memory address for the movement recording
  * must be called before starting to write or read a recording.
  * */
-void MvStorage::rewind(void)
+void Storage::rewind(void)
 {
     this->page = 1;
     this->offset = 0;
@@ -175,7 +175,7 @@ void MvStorage::rewind(void)
  * @brief implement interface from MvCom
  * Fails whenever the mode is different from binary
  */
-int MvStorage::set_mode(enum mvCom_mode mode)
+int Storage::set_mode(enum mvCom_mode mode)
 {
     if(mode != MVCOM_BINARY)
     {
@@ -190,7 +190,7 @@ int MvStorage::set_mode(enum mvCom_mode mode)
  * @brief implement interface from MvCom
  * Always returns MVCOM_BINARY
  */
-enum mvCom_mode MvStorage::get_mode(void)
+enum mvCom_mode Storage::get_mode(void)
 {
     return MVCOM_BINARY;
 }
@@ -204,7 +204,7 @@ enum mvCom_mode MvStorage::get_mode(void)
  * This function assumes a frame will never be bigger than a PAGE_SIZE
  * (it can be divided in a maximum of 2 pages)
  */
-int MvStorage::write_frame(char *frame, int size)
+int Storage::write_frame(char *frame, int size)
 {
     int 
         i,
@@ -258,7 +258,7 @@ int MvStorage::write_frame(char *frame, int size)
  * @brief implements function from MvCom
  * read a frame from memory and offset the internal pointer to the next frame
  */
-int MvStorage::read_frame(char *frame, int *size)
+int Storage::read_frame(char *frame, int *size)
 {
     unsigned char read_size;
     int i;

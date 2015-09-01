@@ -1,39 +1,24 @@
-#ifndef MVSTORAGE_H
-#define MVSTORAGE_H
+#ifndef STORAGE_H
+#define STORAGE_H
 
-#include <SPI.h>
-#include "DataFlash.h"
-#include "frame_struct.h"
-#include "MvCom.h"
+#include "MvStorage.h"
 
 #define INIT_KEY 0xca5a
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 100
 
 /**
- * storage_data
- *
- * @brief Contain all the data that must be stored in a persistent memory.
- */
-struct storage_data
-{
-    /** Used to verify if the memory has been initialized or if it is usable */
-    uint16_t init_key;
-    uint8_t value[CFG_ID_LIST_SIZE];
-};
-
-/**
- * MvStorage
+ * Storage
  *
  * @brief Control the persistent memory and the data that should be stored in it.
  * It also can record one stream of usage by the user, that is why it implements
  * MvCom, the record function works like a live function, but the live package are
  * stored in the persistent memory.
  */
-class MvStorage : public MvCom
+class Storage : public MvStorage
 {
     public:
-        MvStorage(void);
+        Storage(void);
         /* McCom methods */
         int write_frame(char *frame, int size);
         int read_frame(char *frame, int *size);
