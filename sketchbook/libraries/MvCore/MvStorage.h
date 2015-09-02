@@ -1,8 +1,6 @@
 #ifndef MVSTORAGE_H
 #define MVSTORAGE_H
 
-#include <SPI.h>
-#include "DataFlash.h"
 #include "frame_struct.h"
 #include "MvCom.h"
 

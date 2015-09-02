@@ -2,11 +2,6 @@
 #define STORAGE_H
 
 #include "MvStorage.h"
-#include "DataFlash.h"
-
-#define INIT_KEY 0xca5a
-#define PAGE_SIZE 528
-#define TOTAL_PAGES 100
 
 /**
  * Storage
@@ -20,7 +15,7 @@ class Storage : public MvStorage
 {
     public:
         Storage(void);
-        /* McCom methods */
+        /* MvCom methods */
         int write_frame(char *frame, int size);
         int read_frame(char *frame, int *size);
         int set_mode(enum mvCom_mode mode);
@@ -32,18 +27,6 @@ class Storage : public MvStorage
         uint8_t get_cfg(enum cfg_id id);
         void rewind(void);
         void clear_recordings(void);
-    private:
-        /** Data that is in the persistent memory */
-        struct storage_data data;
-        /** Controls the persistent memoryy */
-        DataFlash flash;
-        /** Used at read and write of a record, maps the current memory position */
-        uint16_t page;
-        /** Used at read and write of a record, maps the current memory position */
-        uint16_t offset;
-        int write_storage_data(void);
-        int read_storage_data(void);
-        void soft_reset(void);
 };
 
-#endif //MVSTORAGE_H
+#endif //STORAGE_H

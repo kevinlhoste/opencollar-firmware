@@ -10,9 +10,8 @@
  */
 class MvCore {
     public:
-        void setup(MvStorage *storage,
-                   MvFrameHandler *fhandler,
-                   int pin_button, int pin_led);
+        void setup(MvStorage *storage, MvFrameHandler *fhandler,
+                   int sens_addr, int pin_button, int pin_led);
         void loop();
 };
 

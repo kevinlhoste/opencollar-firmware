@@ -1,27 +1,16 @@
 #ifndef _MV_SENS_H
 #define _MV_SENS_H
 
-// This define is necessary because the MPU6050 have code in the .h files
-// so we need it to force the declaration of the motionapps 20 functions
-#define MPU6050_INCLUDE_DMP_MOTIONAPPS20
 #include "MPU6050.h"
 #include "frame_struct.h"
 #include "definitions.h"
 
-struct dmp {
-    Quaternion q; // [w, x, y, z]         quaternion container
-    uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error) DMP mode
-    volatile bool mpuInterrupt;     // indicates whether MPU interrupt pin has gone high
-    uint16_t fifoCount;     // count of all bytes currently in FIFO
-    uint8_t fifoBuffer[64]; // FIFO storage buffer
-    uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
-    uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
-};
+struct dmp;
 
 class MvSens {
 
     public:
-        static int open(void);
+        static int open(int addr);
 
         static int close(void);
 
@@ -47,7 +36,7 @@ class MvSens {
         // This class shouldn't be instatiated
         MvSens(void);
 
-        static MPU6050 accelgyro;
+        static MPU6050 *mpu;
         static sensor_3_axes acc;
         static sensor_3_axes gyro;
         static sensor_3_axes mag;

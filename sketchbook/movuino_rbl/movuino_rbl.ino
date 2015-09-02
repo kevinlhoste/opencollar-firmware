@@ -4,29 +4,26 @@
 #include "MPU6050.h"
 #include "Wire.h"
 #include "SPI.h"
-#include "DataFlash.h"
 
 #include "MvCore.h"
 #include "SerialMvCom.h"
 #include "Storage.h"
 
-#define BUTTON_PIN 8
-#define WRITE_LED 4
+#define BUTTON_PIN 0
+#define WRITE_LED 13
 
 MvCore g_core;
 
 void setup()
 {
     int i;
-    MvCom *com[2];
+    MvCom *com[1];
 
-    Serial.begin(38400);
     Serial1.begin(9600);
 
-    com[0] = new SerialMvCom(&Serial);
-    com[1] = new SerialMvCom(&Serial1);
+    com[0] = new SerialMvCom(&Serial1);
 
-    MvFrameHandler *fhandler = new MvFrameHandler(com, 2);
+    MvFrameHandler *fhandler = new MvFrameHandler(com, 1);
 
     /* Initialize the storage if it is not yet initialized */
     Storage *storage = new Storage();
@@ -34,7 +31,7 @@ void setup()
         storage->reset();
 
     /* Initialize the core app */
-    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_HIGH, BUTTON_PIN, WRITE_LED);
+    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_LOW, BUTTON_PIN, WRITE_LED);
 }
 
 void loop()

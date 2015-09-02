@@ -1,11 +1,22 @@
+#include "MPU6050_6Axis_MotionApps20.h"
 #include "MvSens.h"
 
-MPU6050 MvSens::accelgyro;
+MPU6050 *MvSens::mpu = NULL;
 sensor_3_axes MvSens::acc;
 sensor_3_axes MvSens::gyro;
 sensor_3_axes MvSens::mag;
 
 #ifdef MV_SENS_DMP_EN
+struct dmp {
+    Quaternion q; // [w, x, y, z]         quaternion container
+    uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error) DMP mode
+    volatile bool mpuInterrupt;     // indicates whether MPU interrupt pin has gone high
+    uint16_t fifoCount;     // count of all bytes currently in FIFO
+    uint8_t fifoBuffer[64]; // FIFO storage buffer
+    uint16_t packetSize;    // expected DMP packet size (default is 42 bytes)
+    uint8_t mpuIntStatus;   // holds actual interrupt status byte from MPU
+};
+
 struct dmp MvSens::dmp;
 sensor_quaternion MvSens::quat;
 
@@ -19,7 +30,7 @@ void MvSens::accelgyro_dmp_setup(void)
     MvSens::dmp.mpuInterrupt = false;
     // load and configure the DMP
     //Serial.println(F("Initializing DMP..."));
-    MvSens::dmp.devStatus = MvSens::accelgyro.dmpInitialize();
+    MvSens::dmp.devStatus = MvSens::mpu->dmpInitialize();
 
     // supply your own gyro offsets here, scaled for min sensitivity
     //mpu.setXGyroOffset(220);
@@ -31,15 +42,15 @@ void MvSens::accelgyro_dmp_setup(void)
     if (MvSens::dmp.devStatus == 0) {
         // turn on the DMP, now that it's ready
         //Serial.println(F("Enabling DMP..."));
-        MvSens::accelgyro.setDMPEnabled(true);
+        MvSens::mpu->setDMPEnabled(true);
 
         // enable Arduino interrupt detection
         //Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
         attachInterrupt(0, MvSens::dmpDataReady, RISING);
-        MvSens::dmp.mpuIntStatus = MvSens::accelgyro.getIntStatus();
+        MvSens::dmp.mpuIntStatus = MvSens::mpu->getIntStatus();
 
         // get expected DMP packet size for later comparison
-        MvSens::dmp.packetSize = MvSens::accelgyro.dmpGetFIFOPacketSize();
+        MvSens::dmp.packetSize = MvSens::mpu->dmpGetFIFOPacketSize();
     } else {
         // ERROR!
         // 1 = initial memory load failed
@@ -59,52 +70,53 @@ void MvSens::accelgyro_dmp_data_get(void)
 
     // reset interrupt flag and get INT_STATUS byte
     MvSens::dmp.mpuInterrupt = false;
-    MvSens::dmp.mpuIntStatus = MvSens::accelgyro.getIntStatus();
+    MvSens::dmp.mpuIntStatus = MvSens::mpu->getIntStatus();
 
     // get current FIFO count
-    MvSens::dmp.fifoCount = MvSens::accelgyro.getFIFOCount();
+    MvSens::dmp.fifoCount = MvSens::mpu->getFIFOCount();
 
     // check for overflow (this should never happen unless our code is too inefficient)
     // NOTE: this is happening all the time, even in the MPU6050 demo code
     if ((MvSens::dmp.mpuIntStatus & 0x10) || MvSens::dmp.fifoCount == 1024) {
         // reset so we can continue cleanly
-        MvSens::accelgyro.resetFIFO();
+        MvSens::mpu->resetFIFO();
         //Serial.println(F("FIFO overflow!"));
 
     // otherwise, check for DMP data ready interrupt (this should happen frequently)
     } else if (MvSens::dmp.mpuIntStatus & 0x02) {
         // wait for correct available data length, should be a VERY short wait
-        while (MvSens::dmp.fifoCount < MvSens::dmp.packetSize) MvSens::dmp.fifoCount = MvSens::accelgyro.getFIFOCount();
+        while (MvSens::dmp.fifoCount < MvSens::dmp.packetSize) MvSens::dmp.fifoCount = MvSens::mpu->getFIFOCount();
 
         // read a packet from FIFO
-        MvSens::accelgyro.getFIFOBytes(MvSens::dmp.fifoBuffer, MvSens::dmp.packetSize);
+        MvSens::mpu->getFIFOBytes(MvSens::dmp.fifoBuffer, MvSens::dmp.packetSize);
         
         // track FIFO count here in case there is > 1 packet available
         // (this lets us immediately read more without waiting for an interrupt)
         MvSens::dmp.fifoCount -= MvSens::dmp.packetSize;
 
         // display quaternion values in easy matrix form: w x y z
-        MvSens::accelgyro.dmpGetQuaternion(&MvSens::dmp.q, MvSens::dmp.fifoBuffer);
+        MvSens::mpu->dmpGetQuaternion(&MvSens::dmp.q, MvSens::dmp.fifoBuffer);
     }
 }
 #endif // #ifdef MV_SENS_DMP_EN
 
-int MvSens::open(void)
+int MvSens::open(int addr)
 {
+    MvSens::mpu = new MPU6050(addr);
     // Initialize I2C
     Wire.begin();
 
     // Initialize the sensor
-    MvSens::accelgyro.initialize();
+    MvSens::mpu->initialize();
 
     // Setup the magnetometer
     // TODO: check if we really need these lines
-    MvSens::accelgyro.setI2CBypassEnabled(true);
+    MvSens::mpu->setI2CBypassEnabled(true);
     delay(100);
 
     // TODO: test the connection
     // Test the connection
-    //if(MvSens::accelgyro.testConnection())
+    //if(MvSens::mpu->testConnection())
     //    return ANS_NACK_UNKNOWN_ERR;
 
 #ifdef MV_SENS_DMP_EN
@@ -116,7 +128,8 @@ int MvSens::open(void)
 
 int MvSens::close(void)
 {
-    // TODO
+    delete MvSens::mpu;
+    MvSens::mpu = NULL;
     return 0;
 }
 
@@ -128,8 +141,8 @@ int MvSens::set_acc_sens(unsigned int value)
         case CFG_ACC_SENS_4G:
         case CFG_ACC_SENS_8G:
         case CFG_ACC_SENS_16G:
-            MvSens::accelgyro.setFullScaleAccelRange(value);
-            if(MvSens::accelgyro.getFullScaleAccelRange() != value)
+            MvSens::mpu->setFullScaleAccelRange(value);
+            if(MvSens::mpu->getFullScaleAccelRange() != value)
                 return ANS_NACK_UNKNOWN_CFG;
             return 0;
 
@@ -147,8 +160,8 @@ int MvSens::set_gyro_sens(unsigned int value)
         case CFG_GYRO_SENS_500DS:
         case CFG_GYRO_SENS_1000DS:
         case CFG_GYRO_SENS_2000DS:
-            MvSens::accelgyro.setFullScaleGyroRange(value);
-            if(MvSens::accelgyro.getFullScaleGyroRange() != value)
+            MvSens::mpu->setFullScaleGyroRange(value);
+            if(MvSens::mpu->getFullScaleGyroRange() != value)
                 return ANS_NACK_INTERNAL_ERR;
             return 0;
         default:
@@ -160,14 +173,10 @@ int MvSens::read(void)
 {
     // TODO: just read the right data if required
 
-    // read raw accel/gyro measurements from device
-    if (!MvSens::accelgyro.checkMag())
-        MvSens::accelgyro.getMotion6(&MvSens::acc.x, &MvSens::acc.y, &MvSens::acc.z,
-                                        &MvSens::gyro.x, &MvSens::gyro.y, &MvSens::gyro.z);
-    else
-        MvSens::accelgyro.getMotion9(&MvSens::acc.x, &MvSens::acc.y, &MvSens::acc.z,
-                                        &MvSens::gyro.x, &MvSens::gyro.y, &MvSens::gyro.z,
-                                        &MvSens::mag.x, &MvSens::mag.y, &MvSens::mag.z);
+    // read raw measurements from device
+    MvSens::mpu->getMotion9(&MvSens::acc.x, &MvSens::acc.y, &MvSens::acc.z,
+                            &MvSens::gyro.x, &MvSens::gyro.y, &MvSens::gyro.z,
+                            &MvSens::mag.x, &MvSens::mag.y, &MvSens::mag.z);
 
 #ifdef MV_SENS_DMP_EN
     // read quaternions

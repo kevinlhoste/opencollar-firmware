@@ -3,6 +3,7 @@
 #include "MvCom.h"
 #include "MvSens.h"
 
+// TODO: add this struct in the class
 static struct
 {
     struct live_ctl
@@ -21,11 +22,11 @@ static struct
     char button;
     int pin_button;
     int pin_led;
+    int sens_addr;
 } g_ctx;
 
-void MvCore::setup(MvStorage *storage,
-                   MvFrameHandler *fhandler,
-                   int pin_button, int pin_led)
+void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
+                   int sens_addr, int pin_button, int pin_led)
 {
     int i;
 
@@ -36,6 +37,7 @@ void MvCore::setup(MvStorage *storage,
     g_ctx.pin_button = pin_button;
     g_ctx.pin_led = pin_led;
     g_ctx.fhandler = fhandler;
+    g_ctx.sens_addr = sens_addr;
 
     pinMode(g_ctx.pin_button, INPUT);
     pinMode(g_ctx.pin_led, OUTPUT);
@@ -61,7 +63,7 @@ static void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans
     if (write_err < 0)
     {
         // This should never happen
-        Serial.print("PANIC!!! Write error");
+        // Serial.print("PANIC!!! Write error");
         while(1);
     }
 }
@@ -165,7 +167,7 @@ void MvCore::loop()
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
 
     /* check button state */
-    if(g_ctx.button != digitalRead(g_ctx.pin_button))
+    if(g_ctx.pin_button && g_ctx.button != digitalRead(g_ctx.pin_button))
     {
         g_ctx.button = digitalRead(g_ctx.pin_button);
         if(g_ctx.button)
@@ -199,7 +201,7 @@ void MvCore::loop()
 
                 /* Check if the acc has already been initialized */
                 if (!g_ctx.live_ctl.ref)
-                    ans_err = MvSens::open();
+                    ans_err = MvSens::open(g_ctx.sens_addr);
 
                 if (!ans_err)
                     add_com_to_live_list(g_ctx.frame.com);
@@ -321,7 +323,7 @@ void MvCore::loop()
                 g_ctx.fhandler->write_frame(&g_ctx.frame);
                 break;
             default:
-                Serial.println("Couldn't find cmd");
+                //Serial.println("Couldn't find cmd");
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_UNKNOWN_CMD);
                 break;
         }
@@ -333,7 +335,7 @@ void MvCore::loop()
     else if(ANS_NACK_INTERNAL_ERR == read_err)
     {
         // This should never happen
-        Serial.print("PANIC!!! READ ERROR!");
+        //Serial.print("PANIC!!! READ ERROR!");
         while(1);
     }
 

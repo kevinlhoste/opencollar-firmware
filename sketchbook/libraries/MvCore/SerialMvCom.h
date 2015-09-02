@@ -4,11 +4,22 @@
 #include "mv_crc.h"
 #include "MvCom.h"
 #include "definitions.h"
-#include "Stream.h"
+#include "Arduino.h"
 
 #define SMC_SERIAL_OBJECTS 2
 #define SMC_SYNC_BYTE1 0x55
 #define SMC_SYNC_BYTE2 0x36
+
+
+// TODO: Check if this macro is the best one to check the board we are compiling
+#ifdef __NRF51822_H__
+    #define SERIAL_CLASS UARTClass
+    #define STR_CAST uint8_t*
+#else
+    #include "Stream.h"
+    #define SERIAL_CLASS Stream
+    #define STR_CAST char*
+#endif
 
 /**
  * SerialMvCom
@@ -18,7 +29,7 @@
 class SerialMvCom : public MvCom
 {
     public:
-        SerialMvCom(Stream *serial);
+        SerialMvCom(SERIAL_CLASS *serial);
         int write_frame(char *frame, int size);
         int read_frame(char *frame, int *size);
         int set_mode(enum mvCom_mode mode);
@@ -50,7 +61,7 @@ class SerialMvCom : public MvCom
             SMC_READY
         } state;
         /** Pointer to the serial port that will be used */
-        Stream *serial;
+        SERIAL_CLASS *serial;
         void _update_byte(void);
         void _update_ascii(void);
         void _read_frame_ascii(char *frame, int *size);
