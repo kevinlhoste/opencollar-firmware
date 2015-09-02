@@ -24,10 +24,7 @@ void setup()
 
     MvFrameHandler *fhandler = new MvFrameHandler(com, 1);
 
-    /* Initialize the storage if it is not yet initialized */
     Storage *storage = new Storage();
-    if(storage->status() < 0)
-        storage->reset();
 
     /* Initialize the core app */
     g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_LOW, BUTTON_PIN, WRITE_LED);

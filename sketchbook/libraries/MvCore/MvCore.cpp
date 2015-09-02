@@ -39,11 +39,21 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
     g_ctx.fhandler = fhandler;
     g_ctx.sens_addr = sens_addr;
 
+    g_ctx.button = 0;
     pinMode(g_ctx.pin_button, INPUT);
     pinMode(g_ctx.pin_led, OUTPUT);
 
-    g_ctx.live_ctl.period = 1000000/g_ctx.storage->get_cfg(CFG_ID_SAMPLING_RATE);
-    g_ctx.button = 0;
+    /* Initialize the storage if it is not yet initialized */
+    if(storage->status() < 0)
+        storage->reset();
+
+    /* Set the stored configuration */
+    g_ctx.live_ctl.period = 1000000/storage->get_cfg(CFG_ID_SAMPLING_RATE);
+    MvSens::set_acc_sens(storage->get_cfg(CFG_ID_ACC_SENS));
+    MvSens::set_gyro_sens(storage->get_cfg(CFG_ID_GYRO_SENS));
+    /* Save the real value in case of error */
+    storage->set_cfg(CFG_ID_ACC_SENS, MvSens::get_acc_sens());
+    storage->set_cfg(CFG_ID_GYRO_SENS, MvSens::get_gyro_sens());
 }
 
 static void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans_err)

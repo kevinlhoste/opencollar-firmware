@@ -16,7 +16,11 @@ class MvSens {
 
         static int set_acc_sens(unsigned int value);
 
+        static unsigned int get_acc_sens(void);
+
         static int set_gyro_sens(unsigned int value);
+
+        static unsigned int get_gyro_sens(void);
 
         static int read(void);
 

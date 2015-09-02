@@ -152,6 +152,11 @@ int MvSens::set_acc_sens(unsigned int value)
     }
 }
 
+unsigned int MvSens::get_acc_sens(void)
+{
+    return MvSens::mpu->getFullScaleAccelRange();
+}
+
 int MvSens::set_gyro_sens(unsigned int value)
 {
     switch(value)
@@ -167,6 +172,11 @@ int MvSens::set_gyro_sens(unsigned int value)
         default:
             return ANS_NACK_UNKNOWN_CFG;
     }
+}
+
+unsigned int MvSens::get_gyro_sens(void)
+{
+    return MvSens::mpu->getFullScaleGyroRange();
 }
 
 int MvSens::read(void)
