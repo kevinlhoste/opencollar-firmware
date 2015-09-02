@@ -143,7 +143,7 @@ int MvSens::set_acc_sens(unsigned int value)
         case CFG_ACC_SENS_16G:
             MvSens::mpu->setFullScaleAccelRange(value);
             if(MvSens::mpu->getFullScaleAccelRange() != value)
-                return ANS_NACK_UNKNOWN_CFG;
+                return ANS_NACK_INTERNAL_ERR;
             return 0;
 
         default:
@@ -165,7 +165,7 @@ int MvSens::set_gyro_sens(unsigned int value)
                 return ANS_NACK_INTERNAL_ERR;
             return 0;
         default:
-            return ANS_NACK_INTERNAL_ERR;
+            return ANS_NACK_UNKNOWN_CFG;
     }
 }
 
