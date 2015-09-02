@@ -15,7 +15,7 @@ class Storage : public MvStorage
 {
     public:
         Storage(void);
-        /* MvCom methods */
+        /* McCom methods */
         int write_frame(char *frame, int size);
         int read_frame(char *frame, int *size);
         int set_mode(enum mvCom_mode mode);
@@ -27,6 +27,10 @@ class Storage : public MvStorage
         uint8_t get_cfg(enum cfg_id id);
         void rewind(void);
         void clear_recordings(void);
+    private:
+        /** Data that is in the persistent memory */
+        struct storage_data data;
+        void soft_reset(void);
 };
 
 #endif //STORAGE_H

@@ -1,5 +1,6 @@
 #include "Storage.h"
-#include "frame_struct.h"
+
+// TODO: implement a real permanet storage
 
 /**
  * Storage
@@ -11,7 +12,7 @@
  */
 Storage::Storage(void)
 {
-    /* TODO */
+    this->soft_reset();
 }
 
 /**
@@ -22,8 +23,23 @@ Storage::Storage(void)
  */
 int Storage::status(void)
 {
-    /* TODO */
-    return 0;
+    return -1;
+}
+
+/**
+ * soft_reset
+ *
+ * @brief reset the values of all variables but doesn't write it at the
+ * persistent memory
+ */
+void Storage::soft_reset(void)
+{
+    unsigned int i;
+
+    for (i = 0; i < CFG_ID_LIST_SIZE; i++)
+    {
+        this->data.value[i] = cfg_id_list[i].default_val;
+    }
 }
 
 /**
@@ -33,7 +49,7 @@ int Storage::status(void)
  */
 void Storage::clear_recordings(void)
 {
-    /* TODO */
+    /* write the record part to say it is empty */
 }
 
 /**
@@ -44,24 +60,25 @@ void Storage::clear_recordings(void)
  */
 int Storage::reset(void)
 {
-    /* TODO */
+    this->soft_reset();
     return 0;
 }
 
 int Storage::set_cfg(enum cfg_id id, uint8_t value)
 {
-    /* TODO */
+    int index = cfg_id_get_index(id);
+    if (index < 0)
+        return index;
+    this->data.value[index] = value;
     return 0;
 }
 
 uint8_t Storage::get_cfg(enum cfg_id id)
 {
-    /* TODO */
-    if (id == CFG_ID_SAMPLING_RATE)
-        return 2;
-    if (id == CFG_ID_LIVE_MAG_RAW_EN)
-        return 0;
-    return 1;
+    int index = cfg_id_get_index(id);
+    if (index < 0)
+        return index;
+    return this->data.value[index];
 }
 
 /**
@@ -72,7 +89,6 @@ uint8_t Storage::get_cfg(enum cfg_id id)
  * */
 void Storage::rewind(void)
 {
-    /* TODO */
 }
 
 /**
@@ -83,7 +99,10 @@ void Storage::rewind(void)
  */
 int Storage::set_mode(enum mvCom_mode mode)
 {
-    /* TODO */
+    if(mode != MVCOM_BINARY)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -95,8 +114,7 @@ int Storage::set_mode(enum mvCom_mode mode)
  */
 enum mvCom_mode Storage::get_mode(void)
 {
-    /* TODO */
-    return MVCOM_ASCII;
+    return MVCOM_BINARY;
 }
 
 /**
@@ -110,8 +128,7 @@ enum mvCom_mode Storage::get_mode(void)
  */
 int Storage::write_frame(char *frame, int size)
 {
-    /* TODO */
-    return 0;
+    return -1;
 }
 
 /**
@@ -122,6 +139,6 @@ int Storage::write_frame(char *frame, int size)
  */
 int Storage::read_frame(char *frame, int *size)
 {
-    /* TODO */
-    return 0;
+    return -1;
 }
+
