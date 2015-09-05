@@ -6,7 +6,6 @@
 #include "definitions.h"
 #include "Arduino.h"
 
-#define SMC_SERIAL_OBJECTS 2
 #define SMC_SYNC_BYTE1 0x55
 #define SMC_SYNC_BYTE2 0x36
 
@@ -34,10 +33,6 @@ class SerialMvCom : public MvCom
         int read_frame(char *frame, int *size);
         int set_mode(enum mvCom_mode mode);
         enum mvCom_mode get_mode(void);
-        /** This variable contains all serial ports that are being used */
-        static SerialMvCom *Smc_list[SMC_SERIAL_OBJECTS];
-        /** Contains the amount of serial ports being used */
-        static int Smc_list_size;
         void update(void);
     private:
         /** Bytes that comes from a serial port and might go to the buffer */

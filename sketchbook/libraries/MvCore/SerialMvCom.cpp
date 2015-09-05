@@ -1,8 +1,5 @@
 #include "SerialMvCom.h"
 
-int SerialMvCom::Smc_list_size = 0;
-SerialMvCom* SerialMvCom::Smc_list[SMC_SERIAL_OBJECTS];
-
 /**
  * _update_byte
  *
@@ -268,28 +265,4 @@ SerialMvCom::SerialMvCom(SERIAL_CLASS *serial)
     this->total_frame_size = 0;
     this->state = SMC_EMPTY;
     this->sequencer = 0;
-
-    /* if there is still space at the list of SerialMvCom, add this port */
-    if(SerialMvCom::Smc_list_size < SMC_SERIAL_OBJECTS)
-    {
-        SerialMvCom::Smc_list[SerialMvCom::Smc_list_size] = this;
-        SerialMvCom::Smc_list_size++;
-        this->serial->print("Init\n");
-    }
 }
-
-/**
- * SerialEvent
- *
- * @brief Function called automaticaly when a byte is received at a serial port.
- * Verifies for each of the inscribed ports which one must be updated
- */
-void SerialEvent(void)
-{
-    int i;
-    for(i = 0; i < SerialMvCom::Smc_list_size; i++)
-    {
-        SerialMvCom::Smc_list[i]->update();
-    }
-}
-
