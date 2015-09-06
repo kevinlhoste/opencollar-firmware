@@ -80,7 +80,7 @@ void GenMvCom::_update_ascii(void)
             this->buffer[this->frame_size] = this->shift_byte;
             this->frame_size++;
             this->shift_byte = this->read_byte();
-            if(this->shift_byte == '\n')
+            if(this->shift_byte == '\n' || this->shift_byte == ';')
             {
                 this->state = GMC_READY;
             }

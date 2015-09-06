@@ -6,6 +6,7 @@
 
 #include "MvCore.h"
 #include "SerialMvCom.h"
+#include "BleMvCom.h"
 #include "Storage.h"
 
 #define BUTTON_PIN 0
@@ -16,13 +17,14 @@ MvCore g_core;
 void setup()
 {
     int i;
-    MvCom *com[1];
+    MvCom *com[2];
 
     Serial1.begin(9600);
 
     com[0] = new SerialMvCom(&Serial1);
+    com[1] = new BleMvCom();
 
-    MvFrameHandler *fhandler = new MvFrameHandler(com, 1);
+    MvFrameHandler *fhandler = new MvFrameHandler(com, 2);
 
     Storage *storage = new Storage();
 
