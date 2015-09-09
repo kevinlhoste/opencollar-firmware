@@ -46,28 +46,28 @@ print_accelgyro(int mode)
 {
     if(mode == CHAR_MODE)
     {
-        serial_print_str(itoa(accelgyro.ax,itoa_buff,10));
+        serial_print_uint32(accelgyro.ax);
         serial_print_char(' ');
-        serial_print_str(itoa(accelgyro.ay,itoa_buff,10));
+        serial_print_uint32(accelgyro.ay);
         serial_print_char(' ');
-        serial_print_str(itoa(accelgyro.az,itoa_buff,10));
+        serial_print_uint32(accelgyro.az);
         if(accelgyro.enabled_sensors > 1)
         {
           serial_print_char(' ');
-          serial_print_str(itoa(accelgyro.gx,itoa_buff,10));
+          serial_print_uint32(accelgyro.gx);
           serial_print_char(' ');
-          serial_print_str(itoa(accelgyro.gy,itoa_buff,10));
+          serial_print_uint32(accelgyro.gy);
           serial_print_char(' ');
-          serial_print_str(itoa(accelgyro.gz,itoa_buff,10));
+          serial_print_uint32(accelgyro.gz);
         }
         if(accelgyro.enabled_sensors > 2)
         {
           serial_print_char(' ');
-          serial_print_str(itoa(accelgyro.mx,itoa_buff,10));
+          serial_print_uint32(accelgyro.mx);
           serial_print_char(' ');
-          serial_print_str(itoa(accelgyro.my,itoa_buff,10));
+          serial_print_uint32(accelgyro.my);
           serial_print_char(' ');
-          serial_print_str(itoa(accelgyro.mz,itoa_buff,10));
+          serial_print_uint32(accelgyro.mz);
 
         }
     }
@@ -101,6 +101,7 @@ void print_all(int mode)
 void
 print_accelgyro_quaternions(int mode)
 {
+/*
     if(mode == CHAR_MODE)
     {
         serial_print_float(accelgyro.q.w);
@@ -118,12 +119,13 @@ print_accelgyro_quaternions(int mode)
         divide_int_print(accelgyro.q.y);
         divide_int_print(accelgyro.q.z);
     }
+*/
 }
 
 void print_all_quaternions(int mode)
 {
 	print_altimeter(mode);
-	print_accelgyro_quaternions(mode);
+//	print_accelgyro_quaternions(mode);
 	serial_print_char('\n');
 }
 
@@ -172,6 +174,7 @@ flash_write_meta_data()
 void
 flash_write_config(char acce_scale, char gyro_scale, int sampling, char enabled_sensors)
 {
+    return;
     flashMem.dataflash.pageToBuffer(0,0);
     flashMem.dataflash.bufferWrite(0,8);
     FLASH_WRITE_INT16(FLASH_SYNC);
@@ -202,8 +205,9 @@ flash_read_meta_data(void)
 }
 
 int
-flash_read_config(char *acce_scale, char *gyro_scale, int *sampling, char *enabled_sensors)
+flash_read_config(char *acce_scale, char *gyro_scale, int16_t *sampling, char *enabled_sensors)
 {
+    return 1;
     int16_t synch_value;
     flashMem.dataflash.pageToBuffer(0,0);
     flashMem.dataflash.bufferRead(0,8);
@@ -221,6 +225,7 @@ flash_read_config(char *acce_scale, char *gyro_scale, int *sampling, char *enabl
 int
 flash_setup(void)
 {
+    return 0;
     int16_t synch_value;
     //Start SPI for the external flash
     SPI.begin();

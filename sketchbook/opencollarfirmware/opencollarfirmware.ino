@@ -28,19 +28,22 @@ THE SOFTWARE.
 #include "Wire.h"
 #include <SPI.h>
 #include "DataFlash.h"
-#include <EEPROM.h>
+//#include <EEPROM.h>
 
 // I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
 // for both classes must be in the include path of your project
 #include "I2Cdev.h"
 #include <MS5611.h>
-//#include "MPU6050.h"
+#include "MPU6050.h"
+//#include "MPU9250.h"
 
 // We could use DMP for everything, but the 9-axis version does not
 // fit into the flash any more.
 
+#define Serial1 Serial
+
 //#include "MPU6050_9Axis_MotionApps41.h"
-#include "MPU6050_6Axis_MotionApps20.h"
+//#include "MPU9150_6Axis_MotionApps20.h"
 #include "accelgyro.h"
 #include "altimeter.h"
 #include "flashMem.h"
@@ -84,14 +87,17 @@ setup(void)
     button = 0;
 
     sf_setup();
+    Serial.println("Hello!");
     //Join I2C
-    Wire.begin();
+    Wire.begin(4, 5, 0);
     accelgyro_setup();
     altimeter_setup();
     // TODO: this setup shouldn't be done here
-    accelgyro_quaternion_setup();
+    //accelgyro_quaternion_setup();
 
     startupDelay();
+
+    Serial1.println("1");
 
     if(flash_setup())
     {
@@ -106,6 +112,7 @@ setup(void)
         flash_write_meta_data();
     }
 
+    Serial1.println("2");
 
     if(flash_read_config(&accelgyro.acc_range,&accelgyro.gyro_range,&accelgyro.sampling_rate,&accelgyro.enabled_sensors))
     {
@@ -114,7 +121,6 @@ setup(void)
     }
     run_mode = STANDBY_MODE;
     is_write_mode = 0;
-
 
 }
 
@@ -136,9 +142,14 @@ mode_handler(void)
        (run_mode == WRITE_MODE) ||
        (run_mode == LIVE_SERIAL_MODE))
     {
+
+	Serial1.print("ML");
         time0 = micros();
+	Serial1.print("5");
         accelgyro_get();
+	Serial1.print("6");
 	altimeter_get();
+	Serial1.print("7");
         switch(run_mode)
         {
             case LIVE_MODE:
@@ -175,7 +186,7 @@ mode_handler(void)
        (run_mode == LIVE_SERIAL_QUAT_MODE))
     {
         time0 = micros();
-        accelgyro_quaternion_get();
+ //       accelgyro_quaternion_get();
 	altimeter_get();
         switch(run_mode)
         {
@@ -216,7 +227,7 @@ frame_handler(void)
     {
         case LIVE_MODE_FRAME:
             // We only use DMP if we want quaternion data.
-            accelgyro_dmp_disable();
+//            accelgyro_dmp_disable();
             run_mode = LIVE_MODE;
             break;
 
@@ -313,7 +324,7 @@ int loop_counter = 0;
 void
 loop()
 {
-
+    Serial.print("!");
     //loop_counter++;
     //if(loop_counter == 100000) loop_counter = 0;
     //if(loop_counter == 0) Serial.println("loop");

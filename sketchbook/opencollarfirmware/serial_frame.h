@@ -36,7 +36,7 @@ char frame[FRAME_BUFFER_SIZE];
 void sf_setup(void)
 {
     Serial.begin(38400);
-    Serial1.begin(9600);
+//    Serial1.begin(9600);
 }
 
 /*

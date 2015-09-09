@@ -24,7 +24,7 @@ int16_t sampling_rate; //unity = Hz
 char enabled_sensors;
 char acc_range;
 char gyro_range;
-Quaternion q; // [w, x, y, z]         quaternion container
+//Quaternion q; // [w, x, y, z]         quaternion container
 uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error) DMP mode
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 uint16_t fifoCount;     // count of all bytes currently in FIFO
@@ -71,22 +71,23 @@ accelgyro_setup(void)
 {
     accelgyro.mpu.initialize();
     accelgyro.mpu.setI2CBypassEnabled(true);
-    delay(100);
-    Serial.println("Testing compass connections...");
-    Serial.println(accelgyro.mpu.checkMag() ? "Yep" : "Nope");
+//    delay(100);
+//    Serial.println("Testing compass connections...");
+//    Serial.println(accelgyro.mpu.checkMag() ? "Yep" : "Nope");
 }
 
 void
 accelgyro_get(void)
 {
-  /* accelgyro.mpu.getMotion6(&accelgyro.ax,
+   accelgyro.mpu.getMotion6(&accelgyro.ax,
                              &accelgyro.ay,
                              &accelgyro.az,
                              &accelgyro.gx,
                              &accelgyro.gy,
-                             &accelgyro.gz);*/
+                             &accelgyro.gz);
   // Serial.println(accelgyro.mpu.checkMag() ? "Yep" : "Nope");                          
   // accelgyro.mpu.getMag(&accelgyro.mx, &accelgyro.my, &accelgyro.mz);                         
+  /*
    accelgyro.mpu.getMotion9(&accelgyro.ax,
                              &accelgyro.ay,
                              &accelgyro.az,
@@ -96,7 +97,7 @@ accelgyro_get(void)
                              &accelgyro.mx,
                              &accelgyro.my,
                              &accelgyro.mz);
-
+*/
 }
 
 void accelgyro_dmp_enable(void)
@@ -110,7 +111,7 @@ void accelgyro_dmp_disable(void)
 	accelgyro.mpu.setI2CBypassEnabled(true);
 	accelgyro.mpu.setDMPEnabled(false);
 }
-
+/*
 void
 accelgyro_quaternion_setup(void)
 {
@@ -148,7 +149,6 @@ accelgyro_quaternion_setup(void)
         while(1);
     }
 }
-
 void
 accelgyro_quaternion_get(void)
 {
@@ -185,5 +185,5 @@ accelgyro_quaternion_get(void)
         accelgyro.mpu.dmpGetQuaternion(&accelgyro.q, accelgyro.fifoBuffer);
     }
 }
-
+*/
 #endif
