@@ -1723,10 +1723,10 @@ bool MPU6050::getIntDataReadyStatus() {
  * @see MPU6050_RA_ACCEL_XOUT_H
  */
 void MPU6050::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz, int16_t* mx, int16_t* my, int16_t* mz) {
-    
+
 	//get accel and gyro
 	getMotion6(ax, ay, az, gx, gy, gz);
-	
+
 	//read mag
 	I2Cdev::writeByte(devAddr, MPU6050_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
 	delay(10);
@@ -1735,11 +1735,11 @@ void MPU6050::getMotion9(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int
 	I2Cdev::readBytes(MPU9150_RA_MAG_ADDRESS, MPU9150_RA_MAG_XOUT_L, 6, buffer);
 	*mx = (((int16_t)buffer[1]) << 8) | buffer[0];
         *my = (((int16_t)buffer[3]) << 8) | buffer[2];
-        *mz = (((int16_t)buffer[5]) << 8) | buffer[4];		
+        *mz = (((int16_t)buffer[5]) << 8) | buffer[4];
 }
 
 void MPU6050::getMag(int16_t* mx, int16_t* my, int16_t* mz) {
-    
+
 	//read mag
 	I2Cdev::writeByte(devAddr, MPU6050_RA_INT_PIN_CFG, 0x02); //set i2c bypass enable pin to true to access magnetometer
 	delay(10);

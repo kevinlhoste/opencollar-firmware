@@ -9,7 +9,7 @@
 #include "BleMvCom.h"
 #include "Storage.h"
 
-#define BUTTON_PIN 0
+#define BUTTON_PIN -1
 #define WRITE_LED 13
 
 MvCore g_core;

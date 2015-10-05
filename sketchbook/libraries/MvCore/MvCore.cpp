@@ -40,7 +40,8 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
     g_ctx.sens_addr = sens_addr;
 
     g_ctx.button = 0;
-    pinMode(g_ctx.pin_button, INPUT);
+    if (g_ctx.pin_button > 0)
+        pinMode(g_ctx.pin_button, INPUT);
     pinMode(g_ctx.pin_led, OUTPUT);
 
     /* Initialize the storage if it is not yet initialized */
@@ -141,7 +142,7 @@ static void send_config(void)
         g_ctx.frame.answer.sub.cfg.id = cfg_id_list[i].id;
         g_ctx.frame.answer.sub.cfg.value = g_ctx.storage->get_cfg(cfg_id_list[i].id);
         g_ctx.fhandler->write_frame(&g_ctx.frame);
-    
+
     }
 }
 
@@ -177,7 +178,7 @@ void MvCore::loop()
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
 
     /* check button state */
-    if(g_ctx.pin_button && g_ctx.button != digitalRead(g_ctx.pin_button))
+    if(g_ctx.pin_button > 0 && g_ctx.button != digitalRead(g_ctx.pin_button))
     {
         g_ctx.button = digitalRead(g_ctx.pin_button);
         if(g_ctx.button)
@@ -290,7 +291,7 @@ void MvCore::loop()
             case CMD_REC_PLAY:
                 if(g_ctx.storage->status() != 0)
                 {
-                       
+
                     send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ANS_NACK_MEMORY_UNAVAILABLE);
                 }
                 else
