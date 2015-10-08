@@ -132,10 +132,10 @@ uint32_t MS5611::readRawPressure(void)
 
 int32_t MS5611::readPressure(bool compensation)
 {
-    uint32_t D1 = readRawPressure();
+    uint32_t my_D1 = readRawPressure();
 
-    uint32_t D2 = readRawTemperature();
-    int32_t dT = D2 - (uint32_t)fc[4] * 256;
+    uint32_t my_D2 = readRawTemperature();
+    int32_t dT = my_D2 - (uint32_t)fc[4] * 256;
 
     int64_t OFF = (int64_t)fc[1] * 65536 + (int64_t)fc[3] * dT / 128;
     int64_t SENS = (int64_t)fc[0] * 32768 + (int64_t)fc[2] * dT / 256;
@@ -163,15 +163,15 @@ int32_t MS5611::readPressure(bool compensation)
 	SENS = SENS - SENS2;
     }
 
-    uint32_t P = (D1 * SENS / 2097152 - OFF) / 32768;
+    uint32_t P = (my_D1 * SENS / 2097152 - OFF) / 32768;
 
     return P;
 }
 
 double MS5611::readTemperature(bool compensation)
 {
-    uint32_t D2 = readRawTemperature();
-    int32_t dT = D2 - (uint32_t)fc[4] * 256;
+    uint32_t my_D2 = readRawTemperature();
+    int32_t dT = my_D2 - (uint32_t)fc[4] * 256;
 
     int32_t TEMP = 2000 + ((int64_t) dT * fc[5]) / 8388608;
 
