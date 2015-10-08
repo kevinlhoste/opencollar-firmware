@@ -31,8 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 bool MS5611::begin(ms5611_osr_t osr)
 {
-    Wire.begin();
-
     reset();
 
     setOversampling(osr);
