@@ -4,6 +4,7 @@
 #include "MPU6050.h"
 #include "Wire.h"
 
+#include "GenMvCom.h"
 #include "MvCore.h"
 #include "SerialMvCom.h"
 #include "BleMvCom.h"
