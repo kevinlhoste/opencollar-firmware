@@ -12,6 +12,14 @@
 #define L_RX_BUF_LEN 128
 #define L_TX_BUF_LEN 128
 
+#define UPDATE_CONNECTION_PARAMS_DELAY 1000 /* 1 second */
+static const Gap::ConnectionParams_t conn_params = {
+    .minConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(8), /* 8 msec */
+    .maxConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(15), /* 15 msec */
+    .slaveLatency = 20,
+    .connectionSupervisionTimeout = 3200, /* 32 seconds (in 10 ms units) */
+};
+
 static BLE ble;
 
 static uint8_t rx_buffer[L_RX_BUF_LEN];
@@ -44,6 +52,22 @@ static void disconnectionCallBack(Gap::Handle_t handle, Gap::DisconnectionReason
     ble.startAdvertising();
 }
 
+static void connectionCallBack(const Gap::ConnectionCallbackParams_t *params)
+{
+    ble_error_t err;
+    Gap::Handle_t gap_handle = params->handle;
+
+    // Wait to update the connection, otherwise it is not taken into account
+    // TODO: check this value
+    delay(UPDATE_CONNECTION_PARAMS_DELAY);
+    err = ble.gap().updateConnectionParams(gap_handle, &conn_params);
+    if (err != BLE_ERROR_NONE)
+    {
+        Serial1.print("Ble error updating conn params:");
+        Serial1.println((int)err);
+    }
+}
+
 void writtenHandle(const GattWriteCallbackParams *Handler)
 {
     uint16_t bytesRead;
@@ -71,6 +95,9 @@ void writtenHandle(const GattWriteCallbackParams *Handler)
 BleMvCom::BleMvCom(void) : GenMvCom()
 {
     ble.init();
+    // TODO: check it is necessary to set preferred connections params
+    ble.setPreferredConnectionParams(&conn_params);
+    ble.onConnection(connectionCallBack);
     ble.onDisconnection(disconnectionCallBack);
     ble.onDataWritten(writtenHandle);
       
@@ -143,19 +170,12 @@ void BleMvCom::flush_bytes(void)
     uint8_t *b = tx_buffer;
     uint8_t *e = &tx_buffer[tx_index];
 
-    // TODO: Check why this is not working correctly
-
     while(b < e)
     {
         int size = e - b < TXRX_BUF_LEN ? e - b : TXRX_BUF_LEN;
-        Serial1.print("\nFlushing");
-        Serial1.print(size);
-        Serial1.println(":\n");
-        Serial1.write(b, size);
         while(BLE_ERROR_NONE != ble.updateCharacteristicValue(characteristic2.getValueAttribute().getHandle(), b, size))
         {
-            Serial1.println("Retrying");
-            delay(50);
+            Serial1.println("BLE Retrying");
         }
         b += size;
     }
