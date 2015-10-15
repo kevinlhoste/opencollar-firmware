@@ -12,13 +12,18 @@
 #define L_RX_BUF_LEN 128
 #define L_TX_BUF_LEN 128
 
-#define UPDATE_CONNECTION_PARAMS_DELAY 1000 /* 1 second */
+#define UPDATE_CONNECTION_PARAMS_DELAY 500 /* 0.5 seconds */
+/* Don't use a really low interval as 8 because the movuino can't
+ * keep it, and the processor keeps busy with the ble stack */
+#define CONN_INTERVAL 30 /* An integer in miliseconds */
 static const Gap::ConnectionParams_t conn_params = {
-    .minConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(8), /* 8 msec */
-    .maxConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(15), /* 15 msec */
+    /* Set min and max to the same value for now, be deterministic for testing */
+    .minConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(CONN_INTERVAL),
+    .maxConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(CONN_INTERVAL),
     .slaveLatency = 20,
-    .connectionSupervisionTimeout = 3200, /* 32 seconds (in 10 ms units) */
+    .connectionSupervisionTimeout = 300, /* 3 seconds (in 10 ms units) */
 };
+static bool waiting_tx = false;
 
 static BLE ble;
 
@@ -27,7 +32,8 @@ static uint16_t rx_index_b = 0;
 static uint16_t rx_index_e = 0;
 
 static uint8_t tx_buffer[L_TX_BUF_LEN];
-static uint16_t tx_index = 0;
+static uint16_t tx_index_e = 0;
+static uint16_t tx_index_b = 0;
 
 // The Nordic UART Service
 static const uint8_t service1_uuid[]                = {0x71, 0x3D, 0, 0, 0x50, 0x3E, 0x4C, 0x75, 0xBA, 0x94, 0x31, 0x48, 0xF1, 0x8D, 0x94, 0x1E};
@@ -87,6 +93,44 @@ void writtenHandle(const GattWriteCallbackParams *Handler)
     }
 }
 
+static void sendData(void)
+{
+    uint8_t *b, *e;
+    uint16_t size;
+
+    /* If we are still waiting previous tx, return*/
+    /* TODO: maybe we should add a timeout here */
+    if (waiting_tx)
+        return;
+
+    b = &tx_buffer[tx_index_b];
+    e = &tx_buffer[tx_index_e];
+
+    /* If the buffer is empty, clean the buffer and return*/
+    if (b == e)
+    {
+        tx_index_b = 0;
+        tx_index_e = 0;
+        return;
+    }
+
+    size = e - b < TXRX_BUF_LEN ? e - b : TXRX_BUF_LEN;
+    //Serial1.print("BLE Sending ");
+    //Serial1.println(size);
+    waiting_tx = true;
+    ble.updateCharacteristicValue(characteristic2.getValueAttribute().getHandle(),
+                                  b, size);
+    tx_index_b += size;
+}
+
+static void datasentCallBack(unsigned count)
+{
+    //Serial1.print("BLE data sent ");
+    //Serial1.println(count);
+    waiting_tx = false;
+    sendData();
+}
+
 /**
  * BleMvCom
  *
@@ -97,6 +141,7 @@ BleMvCom::BleMvCom(void) : GenMvCom()
     ble.init();
     // TODO: check it is necessary to set preferred connections params
     ble.setPreferredConnectionParams(&conn_params);
+    ble.gattServer().onDataSent(datasentCallBack);
     ble.onConnection(connectionCallBack);
     ble.onDisconnection(disconnectionCallBack);
     ble.onDataWritten(writtenHandle);
@@ -133,25 +178,25 @@ char BleMvCom::read_byte(void)
 
 void BleMvCom::write_bytes(char *string)
 {
-    int size = sprintf((char*)&tx_buffer[tx_index], "%s", string);
-    tx_index += size;
+    int size = sprintf((char*)&tx_buffer[tx_index_e], "%s", string);
+    tx_index_e += size;
 }
 
 void BleMvCom::write_bytes(char c)
 {
-    tx_buffer[tx_index++] = c;
+    tx_buffer[tx_index_e++] = c;
 }
 
 void BleMvCom::write_bytes(char *bytes, int size)
 {
     for (int i = 0; i < size; i++)
-        tx_buffer[tx_index++] = bytes[i];
+        tx_buffer[tx_index_e++] = bytes[i];
 }
 
 void BleMvCom::write_bytes(int n)
 {
-    int size = sprintf((char*)&tx_buffer[tx_index], "%d", n);
-    tx_index += size;
+    int size = sprintf((char*)&tx_buffer[tx_index_e], "%d", n);
+    tx_index_e += size;
 }
 
 bool BleMvCom::available_byte(void)
@@ -167,19 +212,5 @@ bool BleMvCom::available_byte(void)
 
 void BleMvCom::flush_bytes(void)
 {
-    uint8_t *b = tx_buffer;
-    uint8_t *e = &tx_buffer[tx_index];
-
-    while(b < e)
-    {
-        int size = e - b < TXRX_BUF_LEN ? e - b : TXRX_BUF_LEN;
-        while(BLE_ERROR_NONE != ble.updateCharacteristicValue(characteristic2.getValueAttribute().getHandle(), b, size))
-        {
-            Serial1.println("BLE Retrying");
-        }
-        b += size;
-    }
-
-    // Empty the buffer
-    tx_index = 0;
+    sendData();
 }
