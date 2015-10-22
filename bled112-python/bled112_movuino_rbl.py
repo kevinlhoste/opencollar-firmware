@@ -136,7 +136,7 @@ def send_cmd():
     #ble.send_command(ser, ble.ble_cmd_attclient_read_by_handle(connection_handle, attr_mv_rx_handle))
     #ble.check_activity(ser, 1)
     time.sleep(1)
-    data_array = map(ord, cmd_to_send)
+    data_array = map(ord, cmd_to_send + "\n")
     print("Tx:" + cmd_to_send + str(map(hex, data_array)))
     ble.send_command(ser, ble.ble_cmd_attclient_write_command(connection_handle, attr_mv_tx_handle, data_array))
     ble.check_activity(ser, 1)
@@ -186,7 +186,7 @@ def main():
     p = optparse.OptionParser(description='BGLib Demo: Movuino')
 
     # set defaults for options
-    p.set_defaults(port="/dev/ttyACM0", baud=115200, packet=False, debug=False, cmd="?;")
+    p.set_defaults(port="/dev/ttyACM0", baud=115200, packet=False, debug=False, cmd="?")
 
     # create serial port options argument group
     group = optparse.OptionGroup(p, "Connection Options")
