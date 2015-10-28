@@ -13,9 +13,8 @@
 #define L_TX_BUF_LEN 128
 
 #define UPDATE_CONNECTION_PARAMS_DELAY 500 /* 0.5 seconds */
-/* Don't use a really low interval as 8 because the movuino can't
- * keep it, and the processor keeps busy with the ble stack */
-#define CONN_INTERVAL 30 /* An integer in miliseconds */
+#define CONN_INTERVAL 8 /* An integer in miliseconds */
+#define WAIT_TX_TIMEOUT ((CONN_INTERVAL/2)*1000)
 static const Gap::ConnectionParams_t conn_params = {
     /* Set min and max to the same value for now, be deterministic for testing */
     .minConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(CONN_INTERVAL),
@@ -24,7 +23,7 @@ static const Gap::ConnectionParams_t conn_params = {
     .connectionSupervisionTimeout = 300, /* 3 seconds (in 10 ms units) */
 };
 static bool waiting_tx = false;
-
+unsigned long time_stamp;
 static BLE ble;
 
 static uint8_t rx_buffer[L_RX_BUF_LEN];
@@ -56,6 +55,8 @@ static GattService         uartService(service1_uuid, uartChars, sizeof(uartChar
 static void disconnectionCallBack(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
     ble.startAdvertising();
+    waiting_tx = false;
+    //TODO: STOP LIVE MODE?
 }
 
 static void connectionCallBack(const Gap::ConnectionCallbackParams_t *params)
@@ -82,7 +83,7 @@ void writtenHandle(const GattWriteCallbackParams *Handler)
     /* TODO: this should never happen, but if it does, it empty the buffer, not a good thing to do */
     if (rx_index_e + TXRX_BUF_LEN > L_RX_BUF_LEN)
     {
-        Serial1.println("BLE overflow");
+        Serial1.println("!!! RX Buffer overflow !!!");
         rx_index_e = 0;
         rx_index_b = 0;
     }
@@ -100,14 +101,28 @@ static void sendData(void)
 
     /* If we are still waiting previous tx, return*/
     /* TODO: maybe we should add a timeout here */
+    //Serial1.print("WAITING_TX = ");
+    //Serial1.println(waiting_tx);
+
     if (waiting_tx)
-        return;
+    {
+        /* If we didn't receive the data_sent event, don't
+         * wait it anymore, reset waiting_tx to false */
+        if (micros() - time_stamp > WAIT_TX_TIMEOUT)
+        {
+            waiting_tx = false;
+            Serial1.println("!!! BLE timeout !!!");
+        }
+        else
+            return;
+    }
 
     b = &tx_buffer[tx_index_b];
     e = &tx_buffer[tx_index_e];
 
-    /* If the buffer is empty, clean the buffer and return*/
-    if (b == e)
+    /* If the buffer is empty or we are not connected,
+     * clean the buffer and return */
+    if (b == e || !ble.gap().getState().connected)
     {
         tx_index_b = 0;
         tx_index_e = 0;
@@ -118,15 +133,16 @@ static void sendData(void)
     //Serial1.print("BLE Sending ");
     //Serial1.println(size);
     waiting_tx = true;
-    ble.updateCharacteristicValue(characteristic2.getValueAttribute().getHandle(),
-                                  b, size);
+    time_stamp = micros();
+    ble.updateCharacteristicValue(
+            characteristic2.getValueAttribute().getHandle(),
+            b, size);
     tx_index_b += size;
 }
 
+//static void confirmationReceivedCallBack(GattAttribute::Handle_t attributeHandle)
 static void datasentCallBack(unsigned count)
 {
-    //Serial1.print("BLE data sent ");
-    //Serial1.println(count);
     waiting_tx = false;
     sendData();
 }
@@ -142,19 +158,20 @@ BleMvCom::BleMvCom(void) : GenMvCom()
     // TODO: check it is necessary to set preferred connections params
     ble.setPreferredConnectionParams(&conn_params);
     ble.gattServer().onDataSent(datasentCallBack);
+    //ble.gattServer().onConfirmationReceived(confirmationReceivedCallBack);
     ble.onConnection(connectionCallBack);
     ble.onDisconnection(disconnectionCallBack);
     ble.onDataWritten(writtenHandle);
-      
+
     // setup adv_data and srp_data
     ble.accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED);
     ble.accumulateAdvertisingPayload(GapAdvertisingData::SHORTENED_LOCAL_NAME,
                                      (const uint8_t *)DEVICE_NAME, sizeof(DEVICE_NAME) - 1);
     ble.accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_128BIT_SERVICE_IDS,
                                      (const uint8_t *)uart_base_uuid_rev, sizeof(uart_base_uuid_rev));
-							  
+
     // set adv_type
-    ble.setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);    
+    ble.setAdvertisingType(GapAdvertisingParams::ADV_CONNECTABLE_UNDIRECTED);
 	  // add service
     ble.addService(uartService);
     // set device name
@@ -176,25 +193,47 @@ char BleMvCom::read_byte(void)
     return rx_buffer[rx_index_b++];
 }
 
-void BleMvCom::write_bytes(char *string)
+static void check_tx_overflow(void)
 {
-    int size = sprintf((char*)&tx_buffer[tx_index_e], "%s", string);
-    tx_index_e += size;
+    /* Check overflow */
+    if (tx_index_e == L_TX_BUF_LEN)
+    {
+        Serial1.println("!!! TX Buffer overflow !!!");
+        tx_index_b = 0;
+        tx_index_e = 0;
+    }
 }
 
-void BleMvCom::write_bytes(char c)
+void BleMvCom::write_bytes(char *string)
 {
-    tx_buffer[tx_index_e++] = c;
+    /* Send nothing if not connected */
+    if (!ble.gap().getState().connected) return;
+
+    for (int i = 0; string[i] != '\0' && tx_index_e < L_TX_BUF_LEN; i++)
+        tx_buffer[tx_index_e++] = string[i];
+
+    check_tx_overflow();
 }
 
 void BleMvCom::write_bytes(char *bytes, int size)
 {
-    for (int i = 0; i < size; i++)
+    /* Send nothing if not connected */
+    if (!ble.gap().getState().connected) return;
+
+    for (int i = 0; i < size && tx_index_e < L_TX_BUF_LEN; i++)
         tx_buffer[tx_index_e++] = bytes[i];
+
+    check_tx_overflow();
+}
+
+void BleMvCom::write_bytes(char c)
+{
+    return write_bytes(&c, 1);
 }
 
 void BleMvCom::write_bytes(int n)
 {
+    if (!ble.gap().getState().connected) return;
     int size = sprintf((char*)&tx_buffer[tx_index_e], "%d", n);
     tx_index_e += size;
 }
