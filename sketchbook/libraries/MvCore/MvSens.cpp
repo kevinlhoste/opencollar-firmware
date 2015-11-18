@@ -2,9 +2,17 @@
 #include "MvSens.h"
 
 MPU6050 *MvSens::mpu = NULL;
+MS5611 MvSens::ms5611;
 sensor_3_axes MvSens::acc;
 sensor_3_axes MvSens::gyro;
 sensor_3_axes MvSens::mag;
+sensor_single MvSens::alt;
+
+void MvSens::altimeter_setup(void)
+{
+    // TODO: check what to do in case of error
+    ms5611.begin(MS5611_ULTRA_HIGH_RES);
+}
 
 #ifdef MV_SENS_DMP_EN
 struct dmp {
@@ -123,6 +131,8 @@ int MvSens::open(int addr)
     MvSens::accelgyro_dmp_setup();
 #endif
 
+    MvSens::altimeter_setup();
+
     return 0;
 }
 
@@ -188,6 +198,9 @@ int MvSens::read(void)
                             &MvSens::gyro.x, &MvSens::gyro.y, &MvSens::gyro.z,
                             &MvSens::mag.x, &MvSens::mag.y, &MvSens::mag.z);
 
+    // Read from the altimeter
+    MvSens::alt.p = MvSens::ms5611.readPressure();
+
 #ifdef MV_SENS_DMP_EN
     // read quaternions
     MvSens::accelgyro_dmp_data_get();
@@ -218,6 +231,11 @@ struct sensor_3_axes MvSens::get_raw_gyro(void)
 struct sensor_3_axes MvSens::get_raw_mag(void)
 {
     return MvSens::mag;
+}
+
+struct sensor_single MvSens::get_raw_alt(void)
+{
+    return MvSens::alt;
 }
 
 #ifdef MV_SENS_DMP_EN

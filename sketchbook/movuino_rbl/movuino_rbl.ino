@@ -2,6 +2,7 @@
 // for internal use of the libs
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include "MS5611.h"
 #include "Wire.h"
 
 #include "GenMvCom.h"

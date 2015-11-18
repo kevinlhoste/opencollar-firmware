@@ -2,6 +2,7 @@
 #define _MV_SENS_H
 
 #include "MPU6050.h"
+#include "MS5611.h"
 #include "frame_struct.h"
 #include "definitions.h"
 
@@ -30,6 +31,8 @@ class MvSens {
 
         static struct sensor_3_axes get_raw_mag(void);
 
+        static struct sensor_single get_raw_alt(void);
+
         static struct sensor_quaternion get_quat(void);
 
         static struct sensor_euler get_euler(void);
@@ -41,9 +44,13 @@ class MvSens {
         MvSens(void);
 
         static MPU6050 *mpu;
+        static MS5611 ms5611;
         static sensor_3_axes acc;
         static sensor_3_axes gyro;
         static sensor_3_axes mag;
+        static sensor_single alt;
+
+        static void altimeter_setup(void);
 
 #ifdef MV_SENS_DMP_EN
         static void dmpDataReady(void);

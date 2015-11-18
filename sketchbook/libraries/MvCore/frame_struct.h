@@ -56,14 +56,16 @@ enum cfg_id {
     CFG_ID_LIVE_GYRO_RAW_EN = 'g',
     /** enable raw magnetometer at live mode */
     CFG_ID_LIVE_MAG_RAW_EN = 'm',
+    /** enable altimeter (pressure) at live mode */
+    CFG_ID_LIVE_ALT_RAW_EN = 'p',
     /** enable quaternion at live mode */
     CFG_ID_LIVE_QUATERNION_EN = 'q',
 };
 // NOTE: update this value when changing the cfg_id
 #ifdef MV_ACC_GYRO_DMP_EN
-    #define CFG_ID_LIST_SIZE 7
+    #define CFG_ID_LIST_SIZE 8
 #else
-    #define CFG_ID_LIST_SIZE 6
+    #define CFG_ID_LIST_SIZE 7
 #endif
 
 struct cfg_default
@@ -218,6 +220,8 @@ enum sensor_type {
     SENS_GYRO_RAW = 'g',
     /** raw magnetometer */
     SENS_MAG_RAW = 'm',
+    /** raw altimeter (pressure) */
+    SENS_ALT_RAW = 'p',
     /** quaternion */
     SENS_QUAT = 'q',
 };
@@ -233,6 +237,16 @@ struct sensor_3_axes {
         x,
         y,
         z;
+};
+
+/**
+ * sensor_single
+ *
+ * raw data from a single value sensor with 32 bits
+ * @see struct sensor_data
+ */
+struct sensor_single {
+    uint32_t p;
 };
 
 /**
@@ -260,6 +274,7 @@ struct sensor_data {
     union {
         struct sensor_3_axes raw;
         struct sensor_quaternion quat;
+        struct sensor_single single;
     } data;
 };
 

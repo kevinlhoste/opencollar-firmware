@@ -396,6 +396,14 @@ void MvCore::loop()
                 send_live(&g_ctx.frame);
             }
 
+            // Send raw alt data
+            if(g_ctx.storage->get_cfg(CFG_ID_LIVE_ALT_RAW_EN))
+            {
+                g_ctx.frame.answer.sub.sensor_data.type = SENS_ALT_RAW;
+                g_ctx.frame.answer.sub.sensor_data.data.single = MvSens::get_raw_alt();
+                send_live(&g_ctx.frame);
+            }
+
 #ifdef MV_ACC_GYRO_DMP_EN
             // Send quat data
             if(g_ctx.storage->get_cfg(CFG_ID_LIVE_QUATERNION_EN))

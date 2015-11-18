@@ -4,7 +4,7 @@
 #include "MvStorage.h"
 #include "DataFlash.h"
 
-#define INIT_KEY 0xca5a
+#define INIT_KEY 0xdead
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 100
 
