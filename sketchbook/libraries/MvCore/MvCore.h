@@ -4,6 +4,8 @@
 #include "MvStorage.h"
 #include "MvFrameHandler.h"
 
+#define VIBRATE_TIMEOUT 100000 // 100ms
+
 /**
  * MvCore
  * @brief Main object that implements the Movuino functionalities
@@ -11,7 +13,7 @@
 class MvCore {
     public:
         void setup(MvStorage *storage, MvFrameHandler *fhandler,
-                   int sens_addr, int pin_button, int pin_led);
+                   int sens_addr, int pin_button, int pin_led, int pin_vibrate);
         void loop();
 };
 

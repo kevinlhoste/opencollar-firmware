@@ -32,7 +32,9 @@ enum cmd_id {
     /** ask for the movoino configuration */
     CMD_CONFIG_GET = 'C',
     /** switch between ascii and binary mode */
-    CMD_SWITCH_MODE = 'm'
+    CMD_SWITCH_MODE = 'm',
+    /** Active gpio from the vibrator by 100ms */
+    CMD_VIBRATE = 'v'
 };
 
 /**

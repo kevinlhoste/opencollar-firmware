@@ -22,11 +22,13 @@ static struct
     char button;
     int pin_button;
     int pin_led;
+    int pin_vibrate;
+    unsigned long vibrate_time_stamp;
     int sens_addr;
 } g_ctx;
 
 void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
-                   int sens_addr, int pin_button, int pin_led)
+                   int sens_addr, int pin_button, int pin_led, int pin_vibrate)
 {
     int i;
 
@@ -36,13 +38,16 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
     g_ctx.storage = storage;
     g_ctx.pin_button = pin_button;
     g_ctx.pin_led = pin_led;
+    g_ctx.pin_vibrate = pin_vibrate;
     g_ctx.fhandler = fhandler;
     g_ctx.sens_addr = sens_addr;
+    g_ctx.vibrate_time_stamp = 0;
 
     g_ctx.button = 0;
     if (g_ctx.pin_button > 0)
         pinMode(g_ctx.pin_button, INPUT);
     pinMode(g_ctx.pin_led, OUTPUT);
+    pinMode(g_ctx.pin_vibrate, OUTPUT);
 
     /* Initialize the storage if it is not yet initialized */
     if(storage->status() < 0)
@@ -177,6 +182,13 @@ void MvCore::loop()
     int ans_err = ANS_NACK_UNKNOWN_CMD;
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
 
+    /* Check if its time to turn off pin_vibrate */
+    if (g_ctx.vibrate_time_stamp &&
+       (micros() - g_ctx.vibrate_time_stamp < VIBRATE_TIMEOUT))
+    {
+        digitalWrite(g_ctx.pin_vibrate, LOW);
+    }
+
     /* check button state */
     if(g_ctx.pin_button > 0 && g_ctx.button != digitalRead(g_ctx.pin_button))
     {
@@ -204,6 +216,12 @@ void MvCore::loop()
                 //Serial.print("Mv Time now:");
                 //Serial.println(micros());
 
+                send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
+                break;
+
+            case CMD_VIBRATE:
+                digitalWrite(g_ctx.pin_vibrate, HIGH);
+                g_ctx.vibrate_time_stamp = micros();
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 break;
 

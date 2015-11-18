@@ -13,6 +13,7 @@
 
 #define BUTTON_PIN -1
 #define WRITE_LED 13
+#define VIBRATE_PIN 13
 
 MvCore g_core;
 
@@ -31,7 +32,7 @@ void setup()
     Storage *storage = new Storage();
 
     /* Initialize the core app */
-    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_LOW, BUTTON_PIN, WRITE_LED);
+    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_LOW, BUTTON_PIN, WRITE_LED, VIBRATE_PIN);
 }
 
 void loop()
