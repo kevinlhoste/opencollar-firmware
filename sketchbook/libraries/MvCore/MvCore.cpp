@@ -9,7 +9,7 @@ static struct
     struct live_ctl
     {
         unsigned long period;
-        unsigned long time_stamp;
+        unsigned long samp_time;
         MvCom *com_list[MAX_COM_PORTS];
         /* ref counts how many com ports are in the live mode com list*/
         int ref;
@@ -34,7 +34,7 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
 
     /* Initialize context */
     g_ctx.live_ctl.ref = 0;
-    g_ctx.live_ctl.time_stamp = 0;
+    g_ctx.live_ctl.samp_time = 0;
     g_ctx.storage = storage;
     g_ctx.pin_button = pin_button;
     g_ctx.pin_led = pin_led;
@@ -82,20 +82,6 @@ static void send_ack_nack(struct frame *frame, MvFrameHandler *fhandler, int ans
         // Serial.print("PANIC!!! Write error");
         while(1);
     }
-}
-
-static bool check_live_time(unsigned long time_stamp, unsigned long period)
-{
-    if(((time_stamp + period) < time_stamp) //overflow case
-       &&(micros() > time_stamp))
-    {
-        return false;
-    }
-    if(micros() >= (time_stamp + period))
-    {
-        return true;
-    }
-    return false;
 }
 
 static void add_com_to_live_list(MvCom *com)
@@ -212,7 +198,7 @@ void MvCore::loop()
                 //Serial.print("Mv Live period:");
                 //Serial.println(g_ctx.live_ctl.period);
                 //Serial.print("Mv Live ts:");
-                //Serial.println(g_ctx.live_ctl.time_stamp);
+                //Serial.println(g_ctx.live_ctl.samp_time);
                 //Serial.print("Mv Time now:");
                 //Serial.println(micros());
 
@@ -236,6 +222,7 @@ void MvCore::loop()
                     add_com_to_live_list(g_ctx.frame.com);
 
                 send_ack_nack(&g_ctx.frame, g_ctx.fhandler, ans_err);
+                g_ctx.live_ctl.samp_time = micros();
                 break;
 
             case CMD_LIVE_STOP:
@@ -377,15 +364,8 @@ void MvCore::loop()
         MvSens::read();
 
         // Check if its time to print the next data
-        if(check_live_time(g_ctx.live_ctl.time_stamp, g_ctx.live_ctl.period))
+        if(micros() - g_ctx.live_ctl.samp_time < ((unsigned long)(-1))/2)
         {
-            unsigned long old_ts = g_ctx.live_ctl.time_stamp;
-            // Set new time_stamp
-            g_ctx.live_ctl.time_stamp = micros();
-
-            //Serial.print("Mv interval:");
-            //Serial.println(g_ctx.live_ctl.time_stamp - old_ts);
-
             // Prepare live frames
             g_ctx.frame.answer.id = ANS_ID_LIVE;
 
@@ -434,7 +414,10 @@ void MvCore::loop()
 #endif //#ifdef MV_ACC_GYRO_DMP_EN
 
             //Serial.print("Mv etime:");
-            //Serial.println(micros() - g_ctx.live_ctl.time_stamp);
+            //Serial.println(micros() - g_ctx.live_ctl.samp_time);
+
+            // Update timestamp
+            g_ctx.live_ctl.samp_time += g_ctx.live_ctl.period;
         }
     }
 }
