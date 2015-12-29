@@ -236,7 +236,7 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                 case SENS_ACC_RAW:
                 case SENS_GYRO_RAW:
                 case SENS_MAG_RAW:
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c X: %d Y: %d Z: %d",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "%c %d %d %d",
                             ans->id,
                             ans->sub.sensor_data.type,
                             ans->sub.sensor_data.data.raw.x,
@@ -245,14 +245,14 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                     goto ret;
 
                 case SENS_ALT_RAW:
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c %d",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "%c %d",
                             ans->id,
                             ans->sub.sensor_data.type,
                             ans->sub.sensor_data.data.single.p);
                     goto ret;
 
                 case SENS_QUAT:
-                    sprintf(buffer, FRAME_ASCII_PREFIX "SENS: %c W: %.2f X: %.2f Y: %.2f Z: %.2f",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "SS: %c %.2f %.2f %.2f %.2f",
                             ans->id,
                             ans->sub.sensor_data.type,
                             ans->sub.sensor_data.data.quat.w,
