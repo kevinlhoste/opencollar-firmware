@@ -235,9 +235,9 @@ void BleMvCom::write_bytes(char c)
 
 void BleMvCom::write_bytes(int n)
 {
-    if (!ble.gap().getState().connected) return;
-    int size = sprintf((char*)&tx_buffer[tx_index_e], "%d", n);
-    tx_index_e += size;
+    char buffer[10];
+    int size = sprintf(buffer, "%d", n);
+    write_bytes(buffer, size);
 }
 
 bool BleMvCom::available_byte(void)
