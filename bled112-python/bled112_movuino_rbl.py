@@ -62,11 +62,11 @@ def my_ble_evt_gap_scan_response(sender, args):
     # arguments:
     #  - MAC address
     #  - use detected address type (will work with either public or private addressing)
-    #  - 32 = 32*0.625ms = 20ms minimum connection interval
-    #  - 48 = 48*0.625ms = 30ms maximum connection interval
+    #  - 6 = 6*1.25ms = 7.5ms minimum connection interval
+    #  - 6 = 6*1.25ms = 7.5ms maximum connection interval
     #  - 10 = 10*10ms = 100ms supervision timeout
     #  - 0 = no slave latency
-    ble.send_command(ser, ble.ble_cmd_gap_connect_direct(args['sender'], args['address_type'], 0x20, 0x30, 10, 0))
+    ble.send_command(ser, ble.ble_cmd_gap_connect_direct(args['sender'], args['address_type'], 6, 6, 10, 0))
     ble.check_activity(ser, 1)
     state = STATE_CONNECTING
 
