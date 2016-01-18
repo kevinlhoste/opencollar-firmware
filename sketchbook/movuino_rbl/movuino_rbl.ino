@@ -9,6 +9,7 @@
 #include "MvCore.h"
 #include "SerialMvCom.h"
 #include "BleMvCom.h"
+#include "at45db161d.h"
 #include "Storage.h"
 
 #define BUTTON_PIN -1
