@@ -276,7 +276,7 @@ int MvFrameHandler::ans_frame_size(struct answer *ans)
     int size;
 
     /* The id */
-    size += sizeof(ans->id);
+    size = sizeof(ans->id);
 
     switch(ans->id)
     {
