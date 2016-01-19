@@ -271,7 +271,7 @@ struct sensor_quaternion {
  *
  * data extracted from the sensor
  */
-struct sensor_data {
+struct __attribute__((packed)) sensor_data {
     uint8_t type;
     union {
         struct sensor_3_axes raw;
