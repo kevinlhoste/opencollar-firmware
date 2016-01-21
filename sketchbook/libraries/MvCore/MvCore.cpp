@@ -137,9 +137,13 @@ static void send_config(void)
     }
 }
 
-static void start_rec(void)
+static int start_rec(void)
 {
     MvCom *aux_com;
+    int ans_err = 0;
+    /* Check if the acc has already been initialized */
+    if (!g_ctx.live_ctl.ref)
+        ans_err = MvSens::open(g_ctx.sens_addr);
     g_ctx.storage->rewind();
     aux_com = g_ctx.frame.com;
     g_ctx.frame.com = g_ctx.storage;
@@ -147,6 +151,16 @@ static void start_rec(void)
     g_ctx.frame.com = aux_com;
     add_com_to_live_list(g_ctx.storage);
     digitalWrite(g_ctx.pin_led,1);
+    return ans_err;
+}
+
+static void stop_rec(void)
+{
+    remove_com_from_live_list(g_ctx.storage);
+    digitalWrite(g_ctx.pin_led,0);
+    /* If there is no more com ports in live mode */
+    if (!g_ctx.live_ctl.ref)
+        MvSens::close();
 }
 
 static void send_live(struct frame *frame)
@@ -185,8 +199,7 @@ void MvCore::loop()
         }
         else
         {
-            remove_com_from_live_list(g_ctx.storage);
-            digitalWrite(g_ctx.pin_led,0);
+            stop_rec();
         }
     }
 
@@ -288,8 +301,7 @@ void MvCore::loop()
                 }
                 else
                 {
-                    remove_com_from_live_list(g_ctx.storage);
-                    digitalWrite(g_ctx.pin_led,0);
+                    stop_rec();
                     send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 }
                 break;
