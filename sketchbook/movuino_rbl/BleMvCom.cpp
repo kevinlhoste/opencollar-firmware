@@ -10,20 +10,16 @@
 // Local buffers
 // TODO: check this value
 #define L_RX_BUF_LEN 64
-#define L_TX_BUF_LEN 256
+#define L_TX_BUF_LEN 512
 
 #define UPDATE_CONNECTION_PARAMS_DELAY 500 /* 0.5 seconds */
-#define CONN_INTERVAL 8 /* An integer in miliseconds */
-#define WAIT_TX_TIMEOUT ((CONN_INTERVAL - 2)*1000)
 static const Gap::ConnectionParams_t conn_params = {
     /* Set min and max to the same value for now, be deterministic for testing */
-    .minConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(CONN_INTERVAL),
-    .maxConnectionInterval = Gap::MSEC_TO_GAP_DURATION_UNITS(CONN_INTERVAL),
-    .slaveLatency = 20,
-    .connectionSupervisionTimeout = 300, /* 3 seconds (in 10 ms units) */
+    .minConnectionInterval = 6, /* 7.5 ms (in 1.25 unit) */
+    .maxConnectionInterval = 6, /* 7.5 ms (in 1.25 unit) */
+    .slaveLatency = 0,
+    .connectionSupervisionTimeout = 50, /* 0.5 seconds (in 10 ms units) */
 };
-static bool waiting_tx = false;
-unsigned long time_stamp;
 static BLE ble;
 
 static uint8_t rx_buffer[L_RX_BUF_LEN];
@@ -55,7 +51,6 @@ static GattService         uartService(service1_uuid, uartChars, sizeof(uartChar
 static void disconnectionCallBack(Gap::Handle_t handle, Gap::DisconnectionReason_t reason)
 {
     ble.startAdvertising();
-    waiting_tx = false;
     //TODO: STOP LIVE MODE?
 }
 
@@ -94,59 +89,42 @@ void writtenHandle(const GattWriteCallbackParams *Handler)
     }
 }
 
-static bool sendDataCriticalSection(uint8_t **b, uint16_t *size)
+static void sendData()
 {
-    //Serial1.print("WAITING_TX = ");
-    //Serial1.println(waiting_tx);
+    uint8_t *b;
+    uint16_t size;
+    ble_error_t error = BLE_ERROR_NONE;
 
-    /* If we are still waiting previous tx, return
-     * If we didn't receive the data_sent event, don't
-     * wait it anymore, reset waiting_tx to false */
-    if (waiting_tx)
+    while(error == BLE_ERROR_NONE)
     {
-        /* If we are still waiting return */
-        if (micros() - time_stamp < WAIT_TX_TIMEOUT)
-            return false;
+        /* If the buffer is empty or we are not connected,
+         * clean the buffer and return */
+        if (tx_index_b == tx_index_e || !ble.gap().getState().connected)
+        {
+            tx_index_b = 0;
+            tx_index_e = 0;
+            break;
+        }
+
+        size = tx_index_e - tx_index_b < TXRX_BUF_LEN ?
+                tx_index_e - tx_index_b : TXRX_BUF_LEN;
+        b = &tx_buffer[tx_index_b];
+
+        error = ble.updateCharacteristicValue(
+                    characteristic2.getValueAttribute().getHandle(),
+                    b, size);
+
+        if (error == BLE_ERROR_NONE)
+            tx_index_b += size;
         else
-            Serial1.println("!!! BLE timeout !!!");
+            break;
     }
-
-    /* If the buffer is empty or we are not connected,
-     * clean the buffer and return */
-    if (tx_index_b == tx_index_e || !ble.gap().getState().connected)
-    {
-        tx_index_b = 0;
-        tx_index_e = 0;
-
-        return false;
-    }
-
-    *size = tx_index_e - tx_index_b < TXRX_BUF_LEN ?
-            tx_index_e - tx_index_b : TXRX_BUF_LEN;
-    *b = &tx_buffer[tx_index_b];
-    tx_index_b += *size;
-
-    waiting_tx = true;
-    time_stamp = micros();
-
-    //Serial1.print("BLE Sending ");
-    //Serial1.println(size);
-     return true;
 }
 
 //static void confirmationReceivedCallBack(GattAttribute::Handle_t attributeHandle)
 static void datasentCallBack(unsigned count)
 {
-    uint8_t *b;
-    uint16_t size;
-
-    //Serial1.println("datasent CB");
-    waiting_tx = false;
-
-    if (sendDataCriticalSection(&b, &size))
-        ble.updateCharacteristicValue(
-                        characteristic2.getValueAttribute().getHandle(),
-                        b, size);
+    sendData();
 }
 
 /**
@@ -253,21 +231,5 @@ bool BleMvCom::available_byte(void)
 
 void BleMvCom::flush_bytes(void)
 {
-    uint8_t *b;
-    uint16_t size;
-    bool res;
-
-    //noInterrupts();
-
-    res = sendDataCriticalSection(&b, &size);
-
-    // TODO: Check why this is blocking when we have two consecutive messages
-    //Serial1.println("Csec b out");
-    //interrupts();
-    //Serial1.println("Csec out");
-
-    if (res)
-        ble.updateCharacteristicValue(
-                characteristic2.getValueAttribute().getHandle(),
-                b, size);
+    sendData();
 }
