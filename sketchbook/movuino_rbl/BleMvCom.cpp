@@ -4,6 +4,10 @@
 
 // TODO: Clean this code, remove static var and add then in the object
 
+// Enter and exit critical section
+#define ENTER_CS() sd_nvic_DisableIRQ(SWI2_IRQn)
+#define EXIT_CS() sd_nvic_EnableIRQ(SWI2_IRQn)
+
 // It seems that 20 is the maximum value for BLE
 #define TXRX_BUF_LEN 20
 
@@ -95,6 +99,7 @@ static void sendData()
     uint16_t size;
     ble_error_t error = BLE_ERROR_NONE;
 
+    ENTER_CS();
     while(error == BLE_ERROR_NONE)
     {
         /* If the buffer is empty or we are not connected,
@@ -119,6 +124,7 @@ static void sendData()
         else
             break;
     }
+    EXIT_CS();
 }
 
 //static void confirmationReceivedCallBack(GattAttribute::Handle_t attributeHandle)
@@ -189,10 +195,12 @@ void BleMvCom::write_bytes(char *string)
     /* Send nothing if not connected */
     if (!ble.gap().getState().connected) return;
 
+    ENTER_CS();
     for (int i = 0; string[i] != '\0' && tx_index_e < L_TX_BUF_LEN; i++)
         tx_buffer[tx_index_e++] = string[i];
 
     check_tx_overflow();
+    EXIT_CS();
 }
 
 void BleMvCom::write_bytes(char *bytes, int size)
@@ -200,10 +208,12 @@ void BleMvCom::write_bytes(char *bytes, int size)
     /* Send nothing if not connected */
     if (!ble.gap().getState().connected) return;
 
+    ENTER_CS();
     for (int i = 0; i < size && tx_index_e < L_TX_BUF_LEN; i++)
         tx_buffer[tx_index_e++] = bytes[i];
 
     check_tx_overflow();
+    EXIT_CS();
 }
 
 void BleMvCom::write_bytes(char c)
@@ -220,12 +230,15 @@ void BleMvCom::write_bytes(int n)
 
 bool BleMvCom::available_byte(void)
 {
+    ENTER_CS();
     if (rx_index_b == rx_index_e)
     {
         // reset the pointers to the begining of the buffer
         rx_index_b = rx_index_e = 0;
+        EXIT_CS();
         return false;
     }
+    EXIT_CS();
     return true;
 }
 
