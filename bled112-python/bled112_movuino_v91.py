@@ -130,7 +130,7 @@ def my_ble_evt_connection_disconnected(sender, args):
     print "ble_evt_connection_disconnected"
     print sender
     print args
-    ctrl_c_handler(0, 0)
+    exit(0)
 
 def send_cmd():
     global ble, ser, state, connection_handle, attr_mv_handle
@@ -266,9 +266,12 @@ def main():
 
 # gracefully exit without a big exception message if possible
 def ctrl_c_handler(signal, frame):
+    print 'Disconnecting...'
     ble.send_command(ser, ble.ble_cmd_connection_disconnect(0))
-    ble.check_activity(ser, 1)
-    print 'Goodbye!'
+    current_time = time.time()
+    while (time.time() < current_time+5): # Busy wait a little
+        ble.check_activity(ser, 1)
+    print 'Timeout: Could not disconnect properly'
     exit(0)
 
 signal.signal(signal.SIGINT, ctrl_c_handler)
