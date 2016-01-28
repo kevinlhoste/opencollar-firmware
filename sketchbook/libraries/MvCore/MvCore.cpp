@@ -144,7 +144,7 @@ static int start_rec(void)
     /* Check if the acc has already been initialized */
     if (!g_ctx.live_ctl.ref)
         ans_err = MvSens::open(g_ctx.sens_addr);
-    g_ctx.storage->rewind();
+    // g_ctx.storage->rewind(); Do not overwrite the old data
     aux_com = g_ctx.frame.com;
     g_ctx.frame.com = g_ctx.storage;
     send_config();

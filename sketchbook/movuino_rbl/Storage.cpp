@@ -57,6 +57,10 @@ Storage::Storage(void)
     /* initialize variables */
     this->page = 1;
     this->offset = 0;
+    /* Go to the end of the written flash */
+    // TODO: is this a good solution?
+    while(!read_frame(NULL, NULL));
+
 }
 
 /**
@@ -287,7 +291,7 @@ int Storage::read_frame(char *frame, int *size)
     BUFFER_READ(flash, this->offset);
     /* read the size of the frame */
     read_size = spi.write(0xff);
-    *size = read_size;
+    if (size) *size = read_size;
     /* if size == 0 return error */
     if(!read_size)
     {
@@ -296,7 +300,8 @@ int Storage::read_frame(char *frame, int *size)
     /* read frame while still in the same page */
     for(i = 0; (i < read_size) && ((i + this->offset + 1) < PAGE_SIZE); i++)
     {
-        frame[i] = spi.write(0xff);
+        if (frame) // TODO: check this before the loop
+            frame[i] = spi.write(0xff);
     }
     /* if reached the end of the page */
     if((i + this->offset + 1) == PAGE_SIZE)
@@ -308,7 +313,8 @@ int Storage::read_frame(char *frame, int *size)
         /* read the rest of the frame */
         for(; i < read_size; i++)
         {
-            frame[i] = spi.write(0xff);
+            if (frame) // TODO: check this before the loop
+                frame[i] = spi.write(0xff);
         }
     }
     /* update the offset */
