@@ -56,6 +56,12 @@ def my_ble_evt_gap_scan_response(sender, args):
     print(args)
     #print [map(hex, l) for l in ad_services]
 
+    # FIXME: Do not try connecting to all the devices
+    # check for the services before
+    if local_name == "DFU":
+        print 'Movuino is still booting... Try again...'
+        exit(0)
+
     # connect to this device
 
     # send "gap_connect_direct" command
