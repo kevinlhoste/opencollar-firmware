@@ -235,6 +235,8 @@ enum sensor_type {
  * @see struct sensor_data
  */
 struct sensor_3_axes {
+    uint32_t
+        ts;// time stamp
     int16_t
         x,
         y,
@@ -248,7 +250,9 @@ struct sensor_3_axes {
  * @see struct sensor_data
  */
 struct sensor_single {
-    uint32_t p;
+    uint32_t
+        ts, // time stamp
+        p;
 };
 
 /**

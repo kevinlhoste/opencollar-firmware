@@ -236,18 +236,20 @@ int MvFrameHandler::build_answer_frame_ascii_mode(char *buffer, struct answer *a
                 case SENS_ACC_RAW:
                 case SENS_GYRO_RAW:
                 case SENS_MAG_RAW:
-                    sprintf(buffer, FRAME_ASCII_PREFIX "%c %d %d %d",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "%c %d %d %d %d",
                             ans->id,
                             ans->sub.sensor_data.type,
+                            ans->sub.sensor_data.data.raw.ts,
                             ans->sub.sensor_data.data.raw.x,
                             ans->sub.sensor_data.data.raw.y,
                             ans->sub.sensor_data.data.raw.z);
                     goto ret;
 
                 case SENS_ALT_RAW:
-                    sprintf(buffer, FRAME_ASCII_PREFIX "%c %d",
+                    sprintf(buffer, FRAME_ASCII_PREFIX "%c %d %d",
                             ans->id,
                             ans->sub.sensor_data.type,
+                            ans->sub.sensor_data.data.single.ts,
                             ans->sub.sensor_data.data.single.p);
                     goto ret;
 

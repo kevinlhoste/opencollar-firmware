@@ -3,7 +3,7 @@
 
 #include "MvStorage.h"
 
-#define INIT_KEY 0xdead
+#define INIT_KEY 0xca5a
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 4096
 

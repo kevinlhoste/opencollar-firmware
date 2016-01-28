@@ -197,9 +197,13 @@ int MvSens::read(void)
     MvSens::mpu->getMotion9(&MvSens::acc.x, &MvSens::acc.y, &MvSens::acc.z,
                             &MvSens::gyro.x, &MvSens::gyro.y, &MvSens::gyro.z,
                             &MvSens::mag.x, &MvSens::mag.y, &MvSens::mag.z);
+    MvSens::acc.ts = millis();
+    MvSens::gyro.ts = MvSens::acc.ts;
+    MvSens::mag.ts = MvSens::acc.ts;
 
     // Read from the altimeter
     MvSens::alt.p = MvSens::ms5611.readPressure();
+    MvSens::alt.ts = millis();
 
 #ifdef MV_SENS_DMP_EN
     // read quaternions
