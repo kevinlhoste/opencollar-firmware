@@ -200,10 +200,14 @@ int MvSens::read(void)
     MvSens::acc.ts = millis();
     MvSens::gyro.ts = MvSens::acc.ts;
     MvSens::mag.ts = MvSens::acc.ts;
+    // FIXME: this was done to avoid I2C blocage
+    delay(10);
 
     // Read from the altimeter
     MvSens::alt.p = MvSens::ms5611.readPressure();
     MvSens::alt.ts = millis();
+    // FIXME: this was done to avoid I2C blocage
+    delay(10);
 
 #ifdef MV_SENS_DMP_EN
     // read quaternions
@@ -216,6 +220,8 @@ int MvSens::read(void)
     MvSens::quat.x = MvSens::dmp.q.x;
     MvSens::quat.y = MvSens::dmp.q.y;
     MvSens::quat.z = MvSens::dmp.q.z;
+    // FIXME: this was done to avoid I2C blocage
+    delay(10);
 
 #endif //#ifdev MV_SENS_DMP_EN
 

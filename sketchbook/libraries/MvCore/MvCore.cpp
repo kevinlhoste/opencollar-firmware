@@ -370,14 +370,18 @@ void MvCore::loop()
     // Deal with live
     if (g_ctx.live_ctl.ref)
     {
+        // FIXME
         // Prepare values
         // This is called every loop because if the DMP is being used, we must call this function
         // to read from the FIFO
-        MvSens::read();
+        // MvSens::read();
 
         // Check if its time to print the next data
         if(micros() - g_ctx.live_ctl.samp_time < ((unsigned long)(-1))/2)
         {
+            // FIXME
+            MvSens::read();
+
             // Prepare live frames
             g_ctx.frame.answer.id = ANS_ID_LIVE;
 
