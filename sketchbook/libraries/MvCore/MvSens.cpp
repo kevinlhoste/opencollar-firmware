@@ -2,7 +2,7 @@
 #include "MvSens.h"
 
 MPU6050 *MvSens::mpu = NULL;
-MS5611 MvSens::ms5611;
+//MS5611 MvSens::ms5611;
 sensor_3_axes MvSens::acc;
 sensor_3_axes MvSens::gyro;
 sensor_3_axes MvSens::mag;
@@ -11,7 +11,7 @@ sensor_single MvSens::alt;
 void MvSens::altimeter_setup(void)
 {
     // TODO: check what to do in case of error
-    ms5611.begin(MS5611_ULTRA_HIGH_RES);
+    //ms5611.begin(MS5611_ULTRA_HIGH_RES);
 }
 
 #ifdef MV_SENS_DMP_EN
@@ -204,10 +204,10 @@ int MvSens::read(void)
     delay(10);
 
     // Read from the altimeter
-    MvSens::alt.p = MvSens::ms5611.readPressure();
+    //MvSens::alt.p = MvSens::ms5611.readPressure();
     MvSens::alt.ts = millis();
     // FIXME: this was done to avoid I2C blocage
-    delay(10);
+    //delay(10);
 
 #ifdef MV_SENS_DMP_EN
     // read quaternions
