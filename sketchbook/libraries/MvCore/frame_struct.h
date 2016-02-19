@@ -22,9 +22,9 @@ enum cmd_id {
     /** asks movuino to exit the recording mode */
     CMD_REC_STOP = 'R',
     /** asks for recorded data */
-    CMD_REC_PLAY = '>',
+    CMD_REC_PLAY = 'p',
     /** ask movuino to clear the records in memory */
-    CMD_REC_CLEAR = '<',
+    CMD_REC_CLEAR = 'P',
     /** ask for the movuino version */
     CMD_VERSION_GET = 'V',
     /** ask to configure a movuino parameter */
