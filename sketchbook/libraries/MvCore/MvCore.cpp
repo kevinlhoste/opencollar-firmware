@@ -434,6 +434,11 @@ void MvCore::loop()
 
             // Update timestamp
             g_ctx.live_ctl.samp_time += g_ctx.live_ctl.period;
+            // If it is a past time, set it to now
+            if(micros() - g_ctx.live_ctl.samp_time < ((unsigned long)(-1))/2)
+            {
+                g_ctx.live_ctl.samp_time = micros();
+            }
         }
     }
 }
