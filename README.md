@@ -50,13 +50,13 @@ Stop recording
 
     R
 
-Read the recorded data
+Read the recorded data (it was > before)
 
-    >
+    p
 
-Clear the recorded data
+Clear the recorded data (it was < before)
 
-    <
+    P
 
 Get the Version
 
