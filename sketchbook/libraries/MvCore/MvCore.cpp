@@ -45,7 +45,7 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
 
     g_ctx.button = 0;
     if (g_ctx.pin_button > 0)
-        pinMode(g_ctx.pin_button, INPUT);
+        pinMode(g_ctx.pin_button, INPUT_PULLUP);
     pinMode(g_ctx.pin_led, OUTPUT);
     pinMode(g_ctx.pin_vibrate, OUTPUT);
 
@@ -177,6 +177,28 @@ static void send_live(struct frame *frame)
     }
 }
 
+// TODO: clean all this code
+static bool button_pressed(int bt_state)
+{
+    static bool pres = false;
+    static unsigned int ts;
+
+    // First press
+    if (!pres && bt_state == LOW)
+    {
+        pres = true;
+        ts = millis();
+    }
+    // Release time after one second
+    else if (pres && bt_state == HIGH)
+    {
+        pres = false;
+        if (millis() - ts > 50)
+            return true;
+    }
+    return false;
+}
+
 void MvCore::loop()
 {
     int ans_err = ANS_NACK_UNKNOWN_CMD;
@@ -190,9 +212,10 @@ void MvCore::loop()
     }
 
     /* check button state */
-    if(g_ctx.pin_button > 0 && g_ctx.button != digitalRead(g_ctx.pin_button))
+    if(g_ctx.pin_button > 0 &&
+       button_pressed(digitalRead(g_ctx.pin_button)))
     {
-        g_ctx.button = digitalRead(g_ctx.pin_button);
+        g_ctx.button = !g_ctx.button;
         if(g_ctx.button)
         {
             start_rec();

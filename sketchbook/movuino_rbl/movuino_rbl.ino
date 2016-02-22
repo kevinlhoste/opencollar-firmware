@@ -12,7 +12,7 @@
 #include "at45db161d.h"
 #include "Storage.h"
 
-#define BUTTON_PIN -1
+#define BUTTON_PIN 11
 #define WRITE_LED 13
 #define VIBRATE_PIN 13
 
