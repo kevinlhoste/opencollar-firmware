@@ -23,6 +23,7 @@ static struct
     int pin_button;
     int pin_led;
     int pin_vibrate;
+    bool recording;
     unsigned long vibrate_time_stamp;
     int sens_addr;
 } g_ctx;
@@ -150,14 +151,14 @@ static int start_rec(void)
     send_config();
     g_ctx.frame.com = aux_com;
     add_com_to_live_list(g_ctx.storage);
-    digitalWrite(g_ctx.pin_led,1);
+    g_ctx.recording = true;
     return ans_err;
 }
 
 static void stop_rec(void)
 {
     remove_com_from_live_list(g_ctx.storage);
-    digitalWrite(g_ctx.pin_led,0);
+    g_ctx.recording = false;
     /* If there is no more com ports in live mode */
     if (!g_ctx.live_ctl.ref)
         MvSens::close();
@@ -199,10 +200,51 @@ static bool button_pressed(int bt_state)
     return false;
 }
 
+// TODO: clean this code
+static void led_pattern(int pin, bool rec)
+{
+    static unsigned int ts = millis();
+    static bool state = false;
+    static bool first = true;
+
+    // Turn off
+    if (state)
+    {
+        if (millis() - ts > 25)
+        {
+            digitalWrite(pin,1);
+            state = false;
+            ts = millis();
+        }
+    }
+    // Turn on
+    else
+    {
+        unsigned int per;
+        if (first && rec)
+            per = 100;
+        else
+            per = 2000;
+
+        if (millis() - ts > per)
+        {
+            digitalWrite(pin,0);
+            state = true;
+            ts = millis();
+            if (first && rec)
+                first = false;
+            else
+                first = true;
+        }
+    }
+}
+
 void MvCore::loop()
 {
     int ans_err = ANS_NACK_UNKNOWN_CMD;
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
+
+    led_pattern(g_ctx.pin_led, g_ctx.recording);
 
     /* Check if its time to turn off pin_vibrate */
     if (g_ctx.vibrate_time_stamp &&
