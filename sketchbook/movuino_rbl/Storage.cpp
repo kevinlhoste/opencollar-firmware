@@ -319,11 +319,6 @@ int Storage::read_frame(char *frame, int *size)
     }
     /* update the offset */
     this->offset = (this->offset + read_size + 1) % PAGE_SIZE;
-    /* if frame ended in the exact end of a page update page */
-    if(!this->offset)
-    {
-        this->page++;
-    }
 
     return 0;
 }
