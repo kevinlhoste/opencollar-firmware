@@ -9,7 +9,7 @@ def main():
     p = optparse.OptionParser(description='Serial reader: Movuino')
 
     # set defaults for options
-    p.set_defaults(port="/dev/ttyACM1", baud=9600, packet=False, debug=False, cmd="?")
+    p.set_defaults(port="/dev/ttyACM1", baud=115200, packet=False, debug=False, cmd="?")
 
     # create serial port options argument group
     group = optparse.OptionGroup(p, "Connection Options")

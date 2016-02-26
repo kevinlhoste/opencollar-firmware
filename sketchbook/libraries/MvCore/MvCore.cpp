@@ -346,7 +346,7 @@ void MvCore::loop()
                         g_ctx.fhandler->write_frame(&g_ctx.frame);
                         // this is too fast causing overflow on the serial, delay a little
                         // TODO: check a better way to avoid overflow
-                        delay(15);
+                        // delay(15);
                     }
                     send_ack_nack(&g_ctx.frame, g_ctx.fhandler, 0);
                 }
