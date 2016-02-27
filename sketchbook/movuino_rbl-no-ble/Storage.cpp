@@ -124,6 +124,7 @@ int Storage::write_storage_data(void)
  */
 void Storage::clear_recordings(void)
 {
+    this->rewind();
     /* write the record part to say it is empty */
     PAGE_TO_BUFFER(flash, 1);
     BUFFER_WRITE(flash,0);
