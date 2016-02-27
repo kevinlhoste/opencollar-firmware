@@ -54,9 +54,6 @@ Storage::Storage(void)
     wait_ms(50);
     /* read data from the memory */
     this->read_storage_data();
-    /* initialize variables */
-    this->page = 1;
-    this->offset = 0;
     /* Go to the end of the written flash */
     // TODO: is this a good solution?
     while(!read_frame(NULL, NULL));
@@ -71,7 +68,7 @@ Storage::Storage(void)
  */
 int Storage::status(void)
 {
-    if (this->data.init_key == INIT_KEY)
+    if (this->data.cfg.init_key == INIT_KEY)
     {
         return 0;
     }
@@ -93,7 +90,7 @@ void Storage::soft_reset(void)
 
     for (i = 0; i < CFG_ID_LIST_SIZE; i++)
     {
-        this->data.value[i] = cfg_id_list[i].default_val;
+        this->data.cfg.value[i] = cfg_id_list[i].default_val;
     }
 }
 
@@ -124,7 +121,9 @@ int Storage::write_storage_data(void)
  */
 void Storage::clear_recordings(void)
 {
+    /* Reset the page and offset */
     this->rewind();
+    this->write_storage_data();
     /* write the record part to say it is empty */
     PAGE_TO_BUFFER(flash, 1);
     BUFFER_WRITE(flash,0);
@@ -141,14 +140,14 @@ void Storage::clear_recordings(void)
 int Storage::reset(void)
 {
     /* reset variables */
-    this->data.init_key = INIT_KEY;
+    this->data.cfg.init_key = INIT_KEY;
     this->soft_reset();
     /* write in memory */
     this->write_storage_data();
     /* clear the recorded data space */
     this->clear_recordings();
     /* read the data that was writen */
-    this->data.init_key = 0;
+    this->data.cfg.init_key = 0;
     this->read_storage_data();
     /* verify if it was done properly */
     if(this->status() < 0)
@@ -169,7 +168,7 @@ int Storage::set_cfg(enum cfg_id id, uint8_t value)
     int index = cfg_id_get_index(id); 
     if (index < 0)
         return index;
-    this->data.value[index] = value;
+    this->data.cfg.value[index] = value;
     return this->write_storage_data();
 }
 
@@ -178,7 +177,7 @@ uint8_t Storage::get_cfg(enum cfg_id id)
     int index = cfg_id_get_index(id); 
     if (index < 0)
         return index;
-    return this->data.value[index];
+    return this->data.cfg.value[index];
 }
 
 /**
@@ -189,8 +188,8 @@ uint8_t Storage::get_cfg(enum cfg_id id)
  * */
 void Storage::rewind(void)
 {
-    this->page = 1;
-    this->offset = 0;
+    this->data.page = 1;
+    this->data.offset = 0;
 }
 
 /**
@@ -233,32 +232,34 @@ int Storage::write_frame(char *frame, int size)
     int 
         i,
         first_part;
+    bool page_changed = false;
 
     /* check if frame fits in memory */
-    if (((size + 2 + this->offset) >= PAGE_SIZE) && (this->page == (TOTAL_PAGES - 1)))
+    if (((size + 2 + this->data.offset) >= PAGE_SIZE) && (this->data.page == (TOTAL_PAGES - 1)))
     {
         /* return error if it doesn't */
         return -1;
     }
 
     /* prepare memory to write */
-    PAGE_TO_BUFFER(flash, this->page);
-    BUFFER_WRITE(flash, this->offset);
+    PAGE_TO_BUFFER(flash, this->data.page);
+    BUFFER_WRITE(flash, this->data.offset);
     /* write the size of the frame */
     spi.write(size & 0xff);
     /* copy to memory until the frame end or until reach the end of the page */
-    for (i = 0; ((i + this->offset + 1) < PAGE_SIZE) && (i < size); i++)
+    for (i = 0; ((i + this->data.offset + 1) < PAGE_SIZE) && (i < size); i++)
     {
         spi.write(frame[i]);
     }
     /* if reached the end of the page */
-    if((i + this->offset + 1) == PAGE_SIZE)
+    if((i + this->data.offset + 1) == PAGE_SIZE)
     {
+        page_changed = true;
         /* write the page to memory */
-        BUFFER_TO_PAGE(flash, this->page);
-        this->page++;
+        BUFFER_TO_PAGE(flash, this->data.page);
+        this->data.page++;
         /* load the new page */
-        PAGE_TO_BUFFER(flash, this->page);
+        PAGE_TO_BUFFER(flash, this->data.page);
         BUFFER_WRITE(flash, 0);
     }
     /* write the rest of the frame */
@@ -269,9 +270,15 @@ int Storage::write_frame(char *frame, int size)
     /* write a frame with size 0 (indicates the last frame) */
     spi.write(0);
     /* write page to memory */
-    BUFFER_TO_PAGE(flash, this->page);
+    BUFFER_TO_PAGE(flash, this->data.page);
     /* update offset */
-    this->offset = (this->offset + size + 1) % PAGE_SIZE;
+    this->data.offset = (this->data.offset + size + 1) % PAGE_SIZE;
+
+    /* If the page has changed, save a checkpoint of the page and
+     * offset, do this only in page multiples of 4 so we won't write
+     * that often in the storage data location */
+    if (page_changed && this->data.page % 4 == 0)
+        this->write_storage_data();
 
     return 0;
 }
@@ -288,8 +295,8 @@ int Storage::read_frame(char *frame, int *size)
     int i;
 
     /* load page to buffer */
-    PAGE_TO_BUFFER(flash, this->page);
-    BUFFER_READ(flash, this->offset);
+    PAGE_TO_BUFFER(flash, this->data.page);
+    BUFFER_READ(flash, this->data.offset);
     /* read the size of the frame */
     read_size = spi.write(0xff);
     if (size) *size = read_size;
@@ -299,17 +306,17 @@ int Storage::read_frame(char *frame, int *size)
         return -1;
     }
     /* read frame while still in the same page */
-    for(i = 0; (i < read_size) && ((i + this->offset + 1) < PAGE_SIZE); i++)
+    for(i = 0; (i < read_size) && ((i + this->data.offset + 1) < PAGE_SIZE); i++)
     {
         if (frame) // TODO: check this before the loop
             frame[i] = spi.write(0xff);
     }
     /* if reached the end of the page */
-    if((i + this->offset + 1) == PAGE_SIZE)
+    if((i + this->data.offset + 1) == PAGE_SIZE)
     {
         /* load next page */
-        this->page++;
-        PAGE_TO_BUFFER(flash, this->page);
+        this->data.page++;
+        PAGE_TO_BUFFER(flash, this->data.page);
         BUFFER_READ(flash, 0);
         /* read the rest of the frame */
         for(; i < read_size; i++)
@@ -319,7 +326,7 @@ int Storage::read_frame(char *frame, int *size)
         }
     }
     /* update the offset */
-    this->offset = (this->offset + read_size + 1) % PAGE_SIZE;
+    this->data.offset = (this->data.offset + read_size + 1) % PAGE_SIZE;
 
     return 0;
 }

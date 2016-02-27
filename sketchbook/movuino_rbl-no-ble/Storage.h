@@ -3,9 +3,18 @@
 
 #include "MvStorage.h"
 
-#define INIT_KEY 0xca5a
+#define INIT_KEY 0x1a2b
 #define PAGE_SIZE 528
 #define TOTAL_PAGES 4096
+
+struct internal_storage_data
+{
+    struct storage_data cfg;
+    /** Used at read and write of a record, maps the current memory position */
+    uint16_t page;
+    /** Used at read and write of a record, maps the current memory position */
+    uint16_t offset;
+};
 
 /**
  * Storage
@@ -33,11 +42,7 @@ class Storage : public MvStorage
         void clear_recordings(void);
     private:
         /** Data that is in the persistent memory */
-        struct storage_data data;
-        /** Used at read and write of a record, maps the current memory position */
-        uint16_t page;
-        /** Used at read and write of a record, maps the current memory position */
-        uint16_t offset;
+        struct internal_storage_data data;
         int write_storage_data(void);
         int read_storage_data(void);
         void soft_reset(void);
