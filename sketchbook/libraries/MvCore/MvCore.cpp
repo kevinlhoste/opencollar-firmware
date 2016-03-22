@@ -262,6 +262,7 @@ void MvCore::loop()
 
     /* check button state */
     if(g_ctx.pin_button > 0 &&
+       g_ctx.storage->status() == 0 &&
        button_pressed(digitalRead(g_ctx.pin_button)))
     {
         g_ctx.button = !g_ctx.button;
