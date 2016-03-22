@@ -12,7 +12,7 @@
 #include "Storage.h"
 
 #define BUTTON_PIN 8
-#define WRITE_LED 4
+#define WRITE_LED 12
 #define VIBRATE_PIN 4
 
 MvCore g_core;
@@ -33,7 +33,8 @@ void setup()
     Storage *storage = new Storage();
 
     /* Initialize the core app */
-    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_HIGH, BUTTON_PIN, WRITE_LED, VIBRATE_PIN);
+    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_HIGH, BUTTON_PIN, VIBRATE_PIN);
+    g_core.setupLed(WRITE_LED, HIGH);
 }
 
 void loop()

@@ -22,14 +22,23 @@ static struct
     char button;
     int pin_button;
     int pin_led;
+    int led_logicOn;
     int pin_vibrate;
     bool recording;
     unsigned long vibrate_time_stamp;
     int sens_addr;
 } g_ctx;
 
+void MvCore::setupLed(int pin, int logicOn)
+{
+    g_ctx.pin_led = pin;
+    g_ctx.led_logicOn = logicOn;
+    pinMode(g_ctx.pin_led, OUTPUT);
+}
+
+
 void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
-                   int sens_addr, int pin_button, int pin_led, int pin_vibrate)
+                   int sens_addr, int pin_button, int pin_vibrate)
 {
     int i;
 
@@ -38,7 +47,6 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
     g_ctx.live_ctl.samp_time = 0;
     g_ctx.storage = storage;
     g_ctx.pin_button = pin_button;
-    g_ctx.pin_led = pin_led;
     g_ctx.pin_vibrate = pin_vibrate;
     g_ctx.fhandler = fhandler;
     g_ctx.sens_addr = sens_addr;
@@ -47,7 +55,6 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
     g_ctx.button = 0;
     if (g_ctx.pin_button > 0)
         pinMode(g_ctx.pin_button, INPUT_PULLUP);
-    pinMode(g_ctx.pin_led, OUTPUT);
     pinMode(g_ctx.pin_vibrate, OUTPUT);
 
     /* Initialize the storage if it is not yet initialized */
@@ -201,7 +208,7 @@ static bool button_pressed(int bt_state)
 }
 
 // TODO: clean this code
-static void led_pattern(int pin, bool rec)
+static void led_pattern(int pin, int logicOn, bool rec)
 {
     static unsigned int ts = millis();
     static bool state = false;
@@ -210,9 +217,9 @@ static void led_pattern(int pin, bool rec)
     // Turn off
     if (state)
     {
-        if (millis() - ts > 25)
+        if ((unsigned int)(millis() - ts) > 25)
         {
-            digitalWrite(pin,1);
+            digitalWrite(pin, !logicOn);
             state = false;
             ts = millis();
         }
@@ -226,9 +233,9 @@ static void led_pattern(int pin, bool rec)
         else
             per = 2000;
 
-        if (millis() - ts > per)
+        if ((unsigned int)(millis() - ts) > per)
         {
-            digitalWrite(pin,0);
+            digitalWrite(pin, logicOn);
             state = true;
             ts = millis();
             if (first && rec)
@@ -244,7 +251,7 @@ void MvCore::loop()
     int ans_err = ANS_NACK_UNKNOWN_CMD;
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
 
-    led_pattern(g_ctx.pin_led, g_ctx.recording);
+    led_pattern(g_ctx.pin_led, g_ctx.led_logicOn, g_ctx.recording);
 
     /* Check if its time to turn off pin_vibrate */
     if (g_ctx.vibrate_time_stamp &&

@@ -33,7 +33,8 @@ void setup()
     Storage *storage = new Storage();
 
     /* Initialize the core app */
-    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_HIGH, BUTTON_PIN, WRITE_LED, VIBRATE_PIN);
+    g_core.setup(storage, fhandler, MPU6050_ADDRESS_AD0_HIGH, BUTTON_PIN, VIBRATE_PIN);
+    g_core.setupLed(WRITE_LED, LOW);
 }
 
 void loop()
