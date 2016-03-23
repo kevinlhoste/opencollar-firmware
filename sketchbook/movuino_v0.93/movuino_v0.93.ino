@@ -5,11 +5,13 @@
 #include "MS5611.h"
 #include "Wire.h"
 #include "SPI.h"
-#include "DataFlash.h"
 
 #include "MvCore.h"
 #include "SerialMvCom.h"
 #include "Storage.h"
+
+#include <SerialFlash.h>
+
 
 #define BUTTON_PIN 8
 #define WRITE_LED 12

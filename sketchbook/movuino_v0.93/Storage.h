@@ -3,6 +3,15 @@
 
 #include "MvStorage.h"
 
+#define INIT_KEY 0x5a5a
+
+struct internal_storage_data
+{
+    struct storage_data cfg;
+    /** Used at read and write of a record, maps the current memory position */
+    unsigned long addr;
+};
+
 /**
  * Storage
  *
@@ -29,8 +38,12 @@ class Storage : public MvStorage
         void clear_recordings(void);
     private:
         /** Data that is in the persistent memory */
-        struct storage_data data;
+        struct internal_storage_data data;
+        int write_storage_data(void);
+        int read_storage_data(void);
         void soft_reset(void);
+        unsigned long page_size;
+        unsigned long capacity;
 };
 
 #endif //STORAGE_H
