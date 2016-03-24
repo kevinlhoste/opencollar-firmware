@@ -19,7 +19,6 @@ static struct
     struct frame frame;
     MvStorage *storage;
     uint8_t version[3] = {0, 0, 1};
-    char button;
     int pin_button;
     int pin_led;
     int led_logicOn;
@@ -52,7 +51,6 @@ void MvCore::setup(MvStorage *storage, MvFrameHandler *fhandler,
     g_ctx.sens_addr = sens_addr;
     g_ctx.vibrate_time_stamp = 0;
 
-    g_ctx.button = 0;
     if (g_ctx.pin_button > 0)
         pinMode(g_ctx.pin_button, INPUT_PULLUP);
     pinMode(g_ctx.pin_vibrate, OUTPUT);
@@ -265,15 +263,10 @@ void MvCore::loop()
        g_ctx.storage->status() == 0 &&
        button_pressed(digitalRead(g_ctx.pin_button)))
     {
-        g_ctx.button = !g_ctx.button;
-        if(g_ctx.button)
-        {
-            start_rec();
-        }
-        else
-        {
+        if(g_ctx.recording)
             stop_rec();
-        }
+        else
+            start_rec();
     }
 
     if (SUCCESS_FRAME_READ == read_err)
