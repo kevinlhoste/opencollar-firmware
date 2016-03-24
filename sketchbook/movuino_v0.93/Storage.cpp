@@ -206,45 +206,31 @@ enum mvCom_mode Storage::get_mode(void)
  */
 int Storage::write_frame(char *frame, int size)
 {
-    unsigned long wsize;
-    bool page_changed = false;
     uint8_t tmp;
 
     /* check if frame fits in memory */
     if (size + 1 + this->data.addr >= this->capacity)
         return -1;
 
+    /* Erase the next page if we are going to need it */
+    if (this->data.addr/this->page_size != (size + 1 + this->data.addr)/this->page_size)
+    {
+        /* Erase the next page */
+        // TODO: check if this doesn't take to long to wait for ready
+        // if so, try to erase two pages in advance
+        SerialFlash.eraseBlock(size + 1 + this->data.addr);
+
+        /* The page has changed, save a checkpoint */
+        this->write_storage_data();
+    }
+
     /* write the size of the frame xor'ed with 0xFF */
     tmp = (size ^ 0xff) & 0xff;
     SerialFlash.write(this->data.addr++, &tmp, sizeof(tmp));
 
-    /* write to memory until the frame end or until reach the end of the page */
-    wsize = this->page_size - (this->data.addr % this->page_size);
-    wsize = wsize < size ? wsize : size;
-
-    /* write in the current page */
-    if (wsize)
-    {
-        SerialFlash.write(this->data.addr, frame, wsize);
-        this->data.addr += wsize;
-    }
-
-    /* We need to write in the next page */
-    if (wsize != size)
-    {
-        page_changed = true;
-        /* Erase the next page */
-        SerialFlash.eraseBlock(this->data.addr);
-        while (!SerialFlash.ready());
-        /* Write in the next page */
-        SerialFlash.write(this->data.addr, &frame[wsize], size - wsize);
-    }
-
-    /* If the page has changed, save a checkpoint of the page and
-     * offset, do this only in page multiples of 4 so we won't write
-     * that often in the storage data location */
-    if (page_changed && (this->data.addr/this->page_size) % 4 == 0)
-        this->write_storage_data();
+    /* write the data */
+    SerialFlash.write(this->data.addr, frame, size);
+    this->data.addr += size;
 
     return 0;
 }
