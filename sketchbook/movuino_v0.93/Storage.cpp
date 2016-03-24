@@ -31,10 +31,7 @@ Storage::Storage(void)
     /* setup flash */
     SerialFlash.begin(CS);
     SerialFlash.readID(id);
-    // TODO: the blockSize returns 64k, but it seems the chip is
-    // configured with an erase block of 256k
-    this->page_size = 262144; //256k
-    //this->page_size = SerialFlash.blockSize();
+    this->page_size = SerialFlash.blockSize();
     this->capacity= SerialFlash.capacity(id);
 
     /* read data from the memory */
