@@ -259,7 +259,8 @@ int Storage::read_frame(char *frame, int *size)
         return -1;
     }
 
-    if (frame) SerialFlash.read(++this->data.addr, frame, read_size);
+    this->data.addr++;
+    if (frame) SerialFlash.read(this->data.addr, frame, read_size);
     this->data.addr += read_size;
 
     return 0;
