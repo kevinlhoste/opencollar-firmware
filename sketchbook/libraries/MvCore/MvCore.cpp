@@ -143,6 +143,13 @@ static void send_config(void)
     }
 }
 
+#define _REC_TIMEOUT (1000UL*60*REC_MIN_TIMEOUT)
+struct
+{
+    unsigned long int accumulated;
+    unsigned long int last_check;
+} rec_timeout_ctx;
+
 static int start_rec(void)
 {
     MvCom *aux_com;
@@ -157,6 +164,9 @@ static int start_rec(void)
     g_ctx.frame.com = aux_com;
     add_com_to_live_list(g_ctx.storage);
     g_ctx.recording = true;
+
+    rec_timeout_ctx.accumulated = 0;
+    rec_timeout_ctx.last_check = millis();
     return ans_err;
 }
 
@@ -167,6 +177,21 @@ static void stop_rec(void)
     /* If there is no more com ports in live mode */
     if (!g_ctx.live_ctl.ref)
         MvSens::close();
+}
+
+static void rec_timeout(void)
+{
+    unsigned long int now = millis();
+    if(g_ctx.recording)
+    {
+        rec_timeout_ctx.accumulated += now - rec_timeout_ctx.last_check;
+        rec_timeout_ctx.last_check = now;
+
+        if (rec_timeout_ctx.accumulated >= _REC_TIMEOUT)
+        {
+            stop_rec();
+        }
+    }
 }
 
 static void send_live(struct frame *frame)
@@ -250,6 +275,8 @@ void MvCore::loop()
     int read_err = g_ctx.fhandler->read_frame(&g_ctx.frame);
 
     led_pattern(g_ctx.pin_led, g_ctx.led_logicOn, g_ctx.recording);
+
+    rec_timeout();
 
     /* Check if its time to turn off pin_vibrate */
     if (g_ctx.vibrate_time_stamp &&

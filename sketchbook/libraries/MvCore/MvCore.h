@@ -5,6 +5,7 @@
 #include "MvFrameHandler.h"
 
 #define VIBRATE_TIMEOUT 100000 // 100ms
+#define REC_MIN_TIMEOUT 7*60
 
 /**
  * MvCore
