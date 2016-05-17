@@ -3,6 +3,15 @@
 
 #define CS 5 // digital pin for flash chip CS pin
 
+void Storage::wakeup(void)
+{
+    if (this->sleep)
+    {
+        this->sleep = 1;
+        SerialFlash.wakeup();
+    }
+}
+
 /**
  * read_storage_data
  *
@@ -11,6 +20,7 @@
 int Storage::read_storage_data(void)
 {
     int i;
+    this->wakeup();
     SerialFlash.read(0, (char*)(&(this->data)), sizeof(this->data));
     while (!SerialFlash.ready());
     return 0;
@@ -43,6 +53,7 @@ Storage::Storage(void)
     // TODO: is this a good solution?
     if(!status())
         while(!read_frame(NULL, NULL));
+    this->sleep = 0;
 }
 
 /**
@@ -86,6 +97,7 @@ void Storage::soft_reset(void)
  */
 int Storage::write_storage_data(void)
 {
+    this->wakeup();
     SerialFlash.eraseBlock(0);
     while (!SerialFlash.ready());
 
@@ -101,6 +113,7 @@ int Storage::write_storage_data(void)
  */
 void Storage::clear_recordings(void)
 {
+    this->wakeup();
     /* Reset the page and offset */
     this->rewind();
     this->write_storage_data();
@@ -119,6 +132,7 @@ void Storage::clear_recordings(void)
  */
 int Storage::reset(void)
 {
+    this->wakeup();
     /* reset variables */
     this->data.cfg.init_key = INIT_KEY;
     this->soft_reset();
@@ -146,6 +160,7 @@ int Storage::reset(void)
 int Storage::set_cfg(enum cfg_id id, uint8_t value)
 {
     int index = cfg_id_get_index(id);
+    this->wakeup();
     if (index < 0)
         return index;
     this->data.cfg.value[index] = value;
@@ -155,6 +170,7 @@ int Storage::set_cfg(enum cfg_id id, uint8_t value)
 uint8_t Storage::get_cfg(enum cfg_id id)
 {
     int index = cfg_id_get_index(id);
+    this->wakeup();
     if (index < 0)
         return index;
     return this->data.cfg.value[index];
@@ -211,17 +227,23 @@ int Storage::write_frame(char *frame, int size)
 {
     uint8_t tmp;
 
+    this->wakeup();
     /* check if frame fits in memory */
-    if (size + 1 + this->data.addr >= this->capacity)
+    if ((unsigned long)size + 1UL + this->data.addr >= this->capacity)
         return -1;
 
     /* Erase the next page if we are going to need it */
-    if (this->data.addr/this->page_size != (size + 1 + this->data.addr)/this->page_size)
+    if (this->data.addr/this->page_size !=
+        ((unsigned long)size + 1UL + this->data.addr)/this->page_size)
     {
+        if ((unsigned long)size + 1UL + this->data.addr < this->page_size)
+        {
+            return 0;
+        }
         /* Erase the next page */
         // TODO: check if this doesn't take to long to wait for ready
         // if so, try to erase two pages in advance
-        SerialFlash.eraseBlock(size + 1 + this->data.addr);
+        SerialFlash.eraseBlock((unsigned long)size + 1UL + this->data.addr);
 
         /* The page has changed, save a checkpoint */
         this->write_storage_data();
@@ -249,6 +271,7 @@ int Storage::read_frame(char *frame, int *size)
     unsigned char read_size;
     int i;
 
+    this->wakeup();
     /* read the size of the frame */
     SerialFlash.read(this->data.addr, &read_size, sizeof(read_size));
     read_size = read_size ^ 0xff; // The size is stored xor'ed with 0xff
@@ -266,3 +289,10 @@ int Storage::read_frame(char *frame, int *size)
     return 0;
 }
 
+/*
+*/
+void Storage::sleep(void)
+{
+    SerialFlash.sleep();
+    this->sleep = 1;
+}

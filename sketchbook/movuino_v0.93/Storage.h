@@ -36,6 +36,7 @@ class Storage : public MvStorage
         uint8_t get_cfg(enum cfg_id id);
         void rewind(void);
         void clear_recordings(void);
+        void sleep(void);
     private:
         /** Data that is in the persistent memory */
         struct internal_storage_data data;
@@ -44,6 +45,7 @@ class Storage : public MvStorage
         void soft_reset(void);
         unsigned long page_size;
         unsigned long capacity;
+        int sleep;
 };
 
 #endif //STORAGE_H

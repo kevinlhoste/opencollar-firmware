@@ -190,6 +190,7 @@ static void rec_timeout(void)
         if (rec_timeout_ctx.accumulated >= _REC_TIMEOUT)
         {
             stop_rec();
+            g_ctx.storage->sleep();
         }
     }
 }
