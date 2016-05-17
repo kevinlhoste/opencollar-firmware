@@ -43,9 +43,10 @@ class Storage : public MvStorage
         int write_storage_data(void);
         int read_storage_data(void);
         void soft_reset(void);
+        void wakeup(void);
         unsigned long page_size;
         unsigned long capacity;
-        int sleep;
+        int sleep_status;
 };
 
 #endif //STORAGE_H

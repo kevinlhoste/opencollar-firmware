@@ -5,9 +5,9 @@
 
 void Storage::wakeup(void)
 {
-    if (this->sleep)
+    if (this->sleep_status)
     {
-        this->sleep = 1;
+        this->sleep_status = 0;
         SerialFlash.wakeup();
     }
 }
@@ -38,6 +38,7 @@ Storage::Storage(void)
 {
     uint8_t id[3];
 
+    this->sleep_status = 0;
     /* setup flash */
     SerialFlash.begin(CS);
     SerialFlash.readID(id);
@@ -53,7 +54,6 @@ Storage::Storage(void)
     // TODO: is this a good solution?
     if(!status())
         while(!read_frame(NULL, NULL));
-    this->sleep = 0;
 }
 
 /**
@@ -294,5 +294,5 @@ int Storage::read_frame(char *frame, int *size)
 void Storage::sleep(void)
 {
     SerialFlash.sleep();
-    this->sleep = 1;
+    this->sleep_status = 1;
 }

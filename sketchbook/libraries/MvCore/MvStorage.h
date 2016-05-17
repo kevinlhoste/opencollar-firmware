@@ -39,6 +39,7 @@ class MvStorage : public MvCom
         virtual uint8_t get_cfg(enum cfg_id id) = 0;
         virtual void rewind(void) = 0;
         virtual void clear_recordings(void) = 0;
+        virtual void sleep(void) = 0;
 };
 
 #endif //MVSTORAGE_H
